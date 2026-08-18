@@ -1,0 +1,141 @@
+# Globální glosář skillu lotsawa — JEDEN pro všechny texty, bez dělení podle linií.
+# Autorita: vzorové texty v reference/ (arbitráž `pdfmine.py arbitrate`, 25 brožur,
+# 2548 bloků). Složka cyklu je dávka práce, ne rozsah terminologie — per-cycle glosář
+# nevzniká; linie u termu je provenience, platnost je vždy globální.
+# Sloupce: tib \t wylie \t czech \t stem \t status \t note
+# status: fixed = závazné, kontroluje `lotsawa.py glossary --check`
+#         prov  = provizorní (do promptu jde, nekontroluje se)
+#         open  = nevyřešené, do promptu nejde
+# stem = NEJKRATŠÍ invariantní prefix (čeština palatalizuje: pohřebiště/pohřebišť);
+#        prázdné = czech bez posledních dvou znaků. Termíny, jejichž české řešení je
+#        sloveso nebo se legitimně střídá s opisem, patří do prov — vynutit je nelze.
+#        Stem musí být ROZLIŠUJÍCÍ: nesmí sedět i na zamítnuté variantě. U víceslovných
+#        termínů ber to slovo, které varianty odlišuje — „tvůrc", ne „překáž" (to sedí
+#        i na chybné „překážeči"; kvůli tomu vada roky procházela kontrolou).
+# TIBETSKÝ KLÍČ musí být stejně rozlišující jako stem: krátká slabika matchuje i své
+#        složeniny s jiným významem, a `check` pak šumí v každém textu. Doloženo dvakrát:
+#        ཐུགས (matchuje thugs rje = soucit, thugs ka = srdce) → zúženo na བླ་མའི་ཐུགས;
+#        ཐུན (matchuje thun mong = běžný, thun mthar = konec sezení) → na ཐུན་གྱིས.
+#        Když má slabika víc významů, klíčuj celou vazbu, ne slabiku.
+# fixed = DOLOŽENO VE VZORECH; počet výskytů patří do note. Bez opory v korpusu →
+#        prov, nebo fixed s výslovným zdůvodněním, proč termín ve vzorech být nemůže.
+#        Opora se ověřuje greppem, ne dojmem:
+#        grep -ho -i '[^.]*<výraz>[^.]*' /Users/prokop/texts/reference/mined/*.txt
+#
+# --- jména a klíčové postavy (provenience Pudri Rekpung / Vadžrakilája)
+སྤུ་གྲི་རེག་ཕུང	spu gri reg phung	Břitva, jež ničí dotekem	dotek	prov	nikoli „dotykem"; název cyklu
+རྡོ་རྗེ་གཞོན་ནུ	rdo rje gzhon nu	Vadžrakumára	Vadžrakumár	fixed
+དཔལ་ཆེན	dpal chen	velký slavný	slavn	fixed	dle vzorů (0/9 shoda s dřívějším „Velkolepý")
+འཁོར་ལོ་རྒྱས་འདེབས་མ	'khor lo rgyas 'debs ma	Khorlo Gjedebma	Gjedebm	prov	choť; nepřekládat („Pečetitelka kola" zamítnuto); instrumentál „Gjedebmou"; mimo referenční korpus (0 dokladů — cyklus ve vzorech není)
+གཤིན་རྗེ	gshin rje	Jamarádža	Jamarádž	fixed	arbitráž 2/4: 2× Jamarádža, zbytek malé „jama" jako obecné jméno; „Šindže" jen ve fonetickém řádku, ne v češtině; v gshin rje gshed = Jamántaka
+ཨོ་རྒྱན	o rgyan	Oddijána	Oddiján	fixed	15× ve vzorech; „Uddijána" 0× — zamítnuto (dřívější konvence skillu byla obrácená)
+ཨུ་རྒྱན	u rgyan	Oddijána	Oddiján	fixed	varianta zápisu téhož
+རྡོ་རྗེ་འཆང	rdo rje 'chang	Vadžradhara	Vadžradhar	prov	sanskrt, ne „Dordže Čhang" (0×); 2 doklady
+ཤཱ་ཀྱ་ཤྲཱི་ཛྙཱ་ན	shAkya shrI dz+nyA na	Šákja Šrí Džňána	Šákja	prov	mimo referenční korpus; kolofon dodatku k Sedmiřádkové modlitbě
+#
+# --- klíčové termíny
+ཕྲིན་ལས	phrin las	osvícená aktivita	aktivit	fixed	bare „aktivita" jen ve výčtu čtyř aktivit
+སྒྲོལ་བ	sgrol ba	osvobození	osvobo	fixed	dle vzorů (0/3 shoda s „vysvobození"); i jako sloveso „osvobodit"
+ཐིག་ལེ	thig le	thigle	thigle	fixed	26× ve vzorech vs. „sféra" 6× — rozhodnuto uživatelem 2026-07-28; skloňuje se jako neutrum nesklonné („v bílo-červené thigle")
+དགྲ་བགེགས	dgra bgegs	nepřátelé a tvůrci překážek	tvůrc	fixed	„tvůrci/tvůrce překážek" 11× ve vzorech; „překážeč" 0× — zamítnuto (není české slovo), rovněž ne „překážející síly", ne „protivníci"
+བགེགས	bgegs	tvůrci překážek	tvůrc	fixed	samostatně, bez dgra; táž evidence jako dgra bgegs
+ངོ་བོ	ngo bo	esence	esenc	fixed	96× ve vzorech vs. „podstata" 4×; „podstata" jen tam, kde by esence v řádku kolidovala
+ཐུགས་དམ	thugs dam	posvátný svazek srdce	svaz	prov	v titulech „posvátný svazek srdce"; ve verších naplnění (thugs dam bskang) vzory volí funkční „kéž jsou tvá přání vyplněna"
+སྲིད་ཞི	srid zhi	samsára a nirvána	samsár	fixed	ne „bytí a mír"
+ཡེ་ཤེས	ye shes	moudrost	moudrost	fixed	bez „prvotní"
+རྒྱལ་བ	rgyal ba	Vítězní	vítězn	fixed	adjektivní tvary 48×: „Vítězný" 25×, „Vítězných" 17×, „Vítězné" 4×, „Vítězní" 2×; nominální „vítězové" 0×, „Vítězům" 0×, „Vítězů" 0× — opraveno 2026-07-28; dřívější české pole bylo nedoložené, i když si toho poznámka sama všímala
+སྲས་བཅས	sras bcas	vítězů i jejich synů	syn	prov	rgyal ba sras bcas; skloňuje se, proto prov
+ཆོས་སྐུ	chos sku	dharmakája	dharmakáj	fixed	29×; kája je ženského rodu („ve vrozené dharmakáji")
+སྐུ་གསུམ	sku gsum	tři káje	káj	fixed	„tří kájí" 18×; ženský rod
+ཕྱག་རྒྱ	phyag rgya	mudra	mudr	prov	v sku gsung thugs kyi phyag rgya legitimně „pečeť", jinak „mudra"
+དུར་ཁྲོད	dur khrod	pohřebiště	pohřebišt	fixed
+རིག་འཛིན	rig 'dzin	vidjadhára	vidjadhár	fixed	„vidjadhár*" 19× ve vzorech („vidjádhár*" 5×), „vidjádhar*" 0× — opraveno 2026-07-28; dřívější tvar glosáře byl bez opory a přepisoval správný tvar z banky tripletů
+དངོས་གྲུབ	dngos grub	siddhi	siddhi	fixed	nepřekládat
+རིག་མ	rig ma	družka poznání	druž	fixed
+སྔགས་ཕྲེང	sngags phreng	řetězec mantry	řetěz	fixed	dle vzorů (ne „girlanda mantry"); stem zkrácen na „řetěz" 2026-07-28 — „řetězec" není invariantní prefix (řetězce/řetězců mají vkladné -e-) a `check` hlásil drift na správných tvarech
+ངན་སྔགས	ngan sngags	zhoubná mantra	zhoubn	prov	ve vzorech málo dokladů (arbitráž 0/1); drag sngags = hněvivá mantra
+དམ་ཡེ	dam ye	bytost samají a moudrosti	samaj	fixed	dam tshig pa / ye shes pa; „samají" 39× ve vzorech vs „samaji" 1× — opraveno 2026-07-28
+འདོད་ཡོན	'dod yon	smyslová potěšení	potěš	fixed
+ཐལ་འབྱིན	thal 'byin	probodávající proniknutí	proniknut	prov	thal 'byin rnam bzhi = čtvero probodnutí; technický termín, k ověření
+#
+# --- fáze praxe a aktivity
+བསྙེན་པ	bsnyen pa	fáze přístupu	přístup	fixed	dle vzorů; ponechaná transkripce „ňenpa" v technickém kontextu
+སྒྲུབ་པ	sgrub pa	uskutečnění	uskuteč	prov	vzory volí „uskutečnit" i „realizace" podle kontextu
+ལས་སྦྱོར	las sbyor	praxe aktivity	aktivit	fixed	dle vzorů (ne „uplatnění aktivity")
+ཞི་བ	zhi ba	mírná	mírn	prov	čtyři aktivity: mírná / rozšiřující / mocenská / hněvivá
+རྒྱས་པ	rgyas pa	rozšiřující	rozšiř	prov	čtyři aktivity; vzory formulují volněji
+དྲག་པོ	drag po	hněvivá	hněviv	prov
+ཚར་གཅོད	tshar gcod	vyhlazení	vyhla	prov
+སྨད་ལས	smad las	nižší aktivity	nižší	fixed
+#
+# --- bytosti a ochránci
+བརྟན་མ	brtan ma	tenma	tenma	prov	bohyně tenma
+དམ་སྲི	dam sri	damsi	damsi	prov	nepřekládat
+བདུད	bdud	démoni	démon	prov	kolize s bdud rtsi (amrita) — kontroluj ručně
+ཕྲ་མེན	phra men	tramen	tramen	prov	strážkyně bran se zvířecími hlavami
+#
+# --- jména osob
+འཇིགས་བྲལ་ཡེ་ཤེས་རྡོ་རྗེ	'jigs bral ye shes rdo rje	Džigdräl Ješe Dordže	Džigdräl	fixed	Düdžom Rinpočhe; „Džigdräl" 15× ve vzorech vs „Džigdral" 1×, „Džigdrel" 3× — opraveno 2026-07-28, dřívější tvar glosáře byl menšinový
+ཡེ་ཤེས་མཚོ་རྒྱལ	ye shes mtsho rgyal	Ješe Tsogjäl	Tsogj	fixed	dle vzorů (0/4 shoda s „Ješe Cchogjal")
+ཁྲོ་རྒྱལ་རྡོ་རྗེ	khro rgyal rdo rje	Throgjal Dordže	Throgjal	prov	žák tertöna, autor tří textů cyklu; mimo referenční korpus (0 dokladů)
+པདྨ་ཐོད་ཕྲེང	pad+ma thod phreng	Pema Thöthrengtsäl	Thöthreng	prov	vzory kolísají: Thöthrengtsäl / Tötrengtsäl
+#
+# --- rituální náčiní a substance
+དགང་གཟར	dgang gzar	plnicí naběračka	naběrač	prov	mimo referenční korpus (0 dokladů) — nelze vynucovat
+བླུགས་གཟར	blugs gzar	obětní lžíce	lžíc	prov	mimo referenční korpus (0 dokladů) — nelze vynucovat
+ཟོར	zor	zor	zor	fixed	nepřekládat; 74×
+ཐོད་པ	thod pa	kapála	kapál	fixed	27× ve vzorech; „miska z lebky" 4× tam, kde je thod výslovně; „lebeční miska" 0× — zamítnuto. POZOR, KLÍČ JE ŠIROKÝ: `thod pa` = rituální miska, ale ve složeninách znamená `thod` prostě lebku jako materiál nebo část těla — `ཐོད་པའི་སྒ` je „sedlo z lebky" (Planoucí paprsky seg 8), `ཐོད་རྔ` má vlastní položku „damaru z lebek". Tam „kapála" nepatří a `check` hlásí falešný poplach; materiál se vyjadřuje předložkou („z lebky"), ne přívlastkem
+ཀ་པ་ལ	ka pa la	kapála	kapál	fixed	totéž co thod pa
+ཐོད་བུམ	thod bum	kapála s vázou	kapál	prov	složenina thod pa + bum pa; 0 přímých dokladů, řídí se pravidlem o materiálu („lebeční miska" zamítnuta)
+ཐོད་རྔ	thod rnga	damaru z lebek	z lebek	fixed	holé „damaru" 12×, „z lebek" 3×; „lebeční damaru" 0× — zamítnuto (stem je „z lebek", protože „damaru" sedí i na zamítnutý tvar)
+ཐོག་མ་མེད་པ་ནས	thog ma med pa nas	od času bez počátku	bez počátku	fixed	„od bezpočátku" 0× — není české slovo (stem s mezerou, jinak by sedělo i na „bezpočátku")
+ཐོག་མེད	thog med	od času bez počátku	bez počátku	fixed	zkrácený tvar téhož
+ཆད་མདོ	chad mdo	čhadmo	čhadmo	prov	ve vzorech málo dokladů
+#
+# --- ponechané transkripce z rol tshig (pokyny rituální hudby; mimo ref. korpus)
+ཟིལ་འབེབས	zil 'bebs	zilbeb	zilbeb	prov	úder činelů
+ཐིང	thing	thing	thing	prov
+ཌཱརྐ	DAr ka	darka	darka	prov
+ཡོ་སྤྱི	yo spyi	jo-či	jo-či	prov	nápěv
+#
+# --- nevyřešené (do promptu nejdou; nejdřív concord, pak dotaz)
+ཐོར་ཐུན	thor thun		 	open	concord: v Troma Nagmo a Khandro Thuktik se pojí s ranní seancí („nam snga dro'i thun") — dřívější „závěrečná seance" je obrácené; navrhuji „přídavná seance"
+རྩང་དམར	rtsang dmar		 	open	hrozivá ozdoba tormy; „rudé kůly" je dohad, 9 výskytů napříč třemi cykly
+ཨེ་ཁྲམ	e khram		 	open	konstrukce v mandale (E + zkřížený khram)
+བཞི་སྙིང་གཅིག་དྲིལ	bzhi snying gcig dril	čtyři esenciální mantry spojené v jednu	esenciální	prov	16 výskytů v 5 textech cyklu
+དཔལ་གཏོར	dpal gtor		 	open	concord: v Khandro Thuktik popsána tvarem (gri gug, lotosové plátky) — jde o typ tormy, ne o „vznešenou tormu"
+བླ་མ	bla ma	mistr	mistr	fixed	tib-anchored arbitráž 13/20 bloků: mistr 13, guru 3, lama 3, učitel 1; „guru" jen v ustálených názvech (guru jóga, Guru Rinpočhe), „lama" ve výčtech (lamům, jidamům, dákiním)
+ཚོགས་ཞིང	tshogs zhing	pole zásluh	pole zásluh	prov	2× ve vzorech; s vysvětlující vsuvkou „(hostů)" — samotné „hosté" (26×) překládá mgron, ne tshogs zhing
+འབྱུང་པོ	'byung po	džungpo	džungpo	fixed	„elementální duchové džungpo" 4× ve vzorech; „zlé síly" (anglické evil forces) zamítnuto. POZOR NA DVA SMYSLY: jako třída zlovolných bytostí = džungpo, ale `འབྱུང་པོ་ཆེ` v pozvání ohňové oběti je **epiteton Agniho** („velký pane živlů") — kontext to určí (hnědý kozel, „velký mudrc" drang srong, mantra ཨོཾ་ཨགྣ་ཡེ). V Planoucích paprscích ohně času seg 11 vyrobil tento klíč „velký džungpo" v oslovení boha ohně, tedy chybu ve významu; epiteton má poznámku v textu. Nezúžil jsem klíč, protože formát neumí negativní podmínku — tady rozhoduje redaktor
+འགགས་མེད	'gags med	bez překážek	bez překážek	fixed	5× ve vzorech; „nezadržitelný" 0× — zamítnuto
+དབང་བཞི	dbang bzhi	čtyři zplnomocnění	zplnomocněn	fixed	zplnomocnění 30× vs. „zmocnění" 4× — zamítnuto
+ཚོགས་ཀྱི་འཁོར་ལོ	tshogs kyi 'khor lo	ganačakra	ganačakr	fixed	9× ve vzorech; „kolo tsoku" 0× — zamítnuto; tshogs mchod = obětina tsoku (8×)
+ལྷག་གཏོར	lhag gtor	zbytková torma	zbytkov	fixed	8× ve vzorech
+ཐོག་མེད་ནས	thog med nas	od času bez počátku	od času bez počátku	fixed	varianta zápisu thog ma med pa nas
+ཀློང	klong	prostor	prostor	fixed	„prostornost" 0× ve vzorech, „prostor(u)" 137+36×; dbyings = základní prostor, klong holý prostor
+ཀུན་འདུས	kun 'dus	ztělesnění	ztěles	fixed	ztělesnění 13× („jediné ztělesnění všech Vítězných"), „vtělení" 0× — zamítnuto
+བླ་མའི་ཐུགས	bla ma'i thugs	osvícená mysl mistra	osvícen	fixed	„osvícené mysli" 14×, „moudrá mysl" 0× — zamítnuto; klíč je záměrně zúžený, samotné ཐུགས matchuje i thugs rje (soucit) a thugs ka (srdce)
+སྣང་སྲིད	snang srid	jevová existence	jevov	fixed	„jevové existence" 28× + „jevová existence" 3×; „vše jevové i jsoucí" 0× — zamítnuto
+ཤིས་པ་བརྗོད	shis pa brjod	verše příznivosti	příznivost	fixed	„verše příznivosti" 4×, „slova přízně" 0× — zamítnuto
+དམ་རྫས	dam rdzas	substance samají	samají	fixed	„substance samají" 8×, „substance samaji" 0× — genitiv plurálu
+འགྲུབ་པར་ཤོག	'grub par shog	dosáhneme realizace	realizac	fixed	tentýž verš (dkyil 'khor gcig tu 'grub par shog) je ve vzorech 2× jako „dosáhneme realizace"; „uskutečnění" pro grub zamítnuto
+རྒྱུད	rgyud	proud bytí	proud bytí	prov	0× ve vzorech („proud mysli" 1×, „kontinuum" pro jiné termy); Lotsawa House „your very being" — rgyud zde není jen mysl
+ཐུན་གྱིས	thun gyis	rituální substance	substanc	fixed	NE „thun" — v češtině ani angličtině to není zavedené slovo (rozhodnutí uživatele 2026-07-28); thun gyis brab = „vrženými rituálními substancemi", Lotsawa House „wrathful substances". Klíč je zúžený na instrumentál: samotné ཐུན matchuje i ཐུན་མོང (běžný) a ཐུན་མཐར (konec sezení) — homonymie substance / praxový úsek. Starší „thun-torma" v Pudri Rekpung se nepředělává (neaktuální překlad).
+ལྷུན་གྲུབ	lhun grub	spontánní dovršení	spontán	prov	„spontánně přítomný" 5×, „spontánně dovršen" 1×, „spontánní dokonalost" 1× — vzory kolísají, proto prov. U epitet v oslovení (sku gsum lhun grub …) volit jmennou apozici „spontánní dovršení tří kájí", ne visící přívlastek „spontánně dovršené tři káje" (nominativ bez vazby na vokativ).
+ཡོན་ཏན	yon tan	kvality	kvalit	fixed	„kvalit*" 42× ve vzorech („dokonalé kvality", „pozitivní kvality"), „vlastnost" 1× — zamítnuto; rozhodnutí uživatele 2026-07-28
+ཡན་ལག་བརྒྱད་ལྡན	yan lag brgyad ldan	o osmi kvalitách	kvalit	fixed	o vodě; vzory mají obrat doslova: „jezero nektaru obsahující osm kvalit vody", „čistota této vody má osm kvalit"
+སྒོ་གསུམ	sgo gsum	tři brány	bran	fixed	„tří bran" 4× + „tři brány" 3× + „třemi branami" 1×; „vrata" 0× — zamítnuto (rozhodnutí uživatele 2026-07-28); vzory často glosují „(těla, řeči a mysli)"
+རྡོ་རྗེར་གྱུར	rdo rjer gyur	přemění se ve vadžru	vadžr	prov	„vadžrový" jako přísudek 0× ve vzorech (jediné „vadžrových paprsků"); vzory mají „vadžra tělo, vadžra řeč a vadžra mysl" 2× a „stav vadžry" 3×
+ཧེ་རུ་ཀ	he ru ka	héruka	hér	prov	„héruko" 11× vs „heruko" 2× ve vzorech; v nominativu remíza („héruka" 7× / „heruka" 8×), proto prov — rozhoduje vokativ, nejčastější tvar ve verších
+འོད་ཟེར་གླང་པོ	'od zer glang po	Özer Langpo	Özer Lang	prov	mistr kílajové linie (Pudri Rekpung seg 6); „Prabhahasti" 0× i „Langpo" 0× ve vzorech — bez dokladu na žádné straně vyhrává tibetská transkripce, sanskrt patří do poznámky
+མཁར་ཆེན་བཟའ	mkhar chen bza'	Kharčhenzo	Kharčhenz	prov	1× ve vzorech, vždy s poznámkou „Princezna z Kharčhenu – Ješe Tsogjäl"; „paní z Kharčhenu" 0× — zamítnuto (gloss patří do poznámky, ne do verše)
+མཐར་ཕྱིན	mthar phyin	završen	završ	prov	„završ*" 25× vs „k dokonalosti" 2×; mthar phyin = dovést k završení; sloveso, proto prov
+ཆགས་ཐོགས	chags thogs	lpění i překážky	lpě	prov	dvojice: chags = lpění (5×), thogs = překážky; překlad jen druhého členu („nic nebrání") vypouští nepřipoutanost
+ཟུང་འཇུག	zung 'jug	sjednocení	sjednoc	prov	yuganaddha; „sjednocení" 18× vs „jednoty" 9×, „jednota" 5×; head-final složenina — v zung 'jug sgyu 'phrul ye shes je hlava ye shes, ne zung 'jug
+སྤྲུལ་པའི་སྐུ	sprul pa'i sku	nirmanakája	nirmanakáj	fixed	18× vs „nirmánakáj*" 0× — bez délky; ženského rodu („nejvyšší nirmanakájo Padmasambhavo", „dákiní nirmanakáji", „soucitná ženská nirmanakája")
+བདུད་འཇོམས	bdud 'joms	Düdžom	Düdžom	fixed	„Düdžom" 75× ve vzorech vs „Dudjom" 1× (anglická transkripce), „Dudžom" 0×; platí i v kreditu „Düdžom Rinpočhe". Bibliografická citace v kolofonu zůstává v anglickém tvaru „Dudjom Rinpoche" verbatim
+གཟུངས་མ	gzungs ma	partnerka	partnerk	fixed	„partnerk*" 24× ve vzorech („tajná partnerka", „svrchovaná partnerka", vok. „partnerko"), „družk*" 0× — thugs kyi gzungs ma = srdeční partnerka
+ཕུར་པ	phur pa	Kilája	Kiláj	prov	„Kiláj*" 20× + „Vadžrakiláj*" 8× ve vzorech; „Kílaj*" 0× a „Vadžrakílaj*" 0× — dlouhá je DRUHÁ slabika (ki-LÁ-ja). Zadání prvního běhu i moje prompty měly „Kílaja" špatně; nahlásil to Fable proti instrukci a doložil počtem. Status prov, ne fixed: klíč ཕུར་པ matchuje i název cyklu ཕུར་པ་སྤུ་གྲི་རེག་ཕུང, kde čeština „Kilája" legitimně vynechává („Břitva, jež ničí dotekem"), a `check` pak šuměl na správných titulech
+དམ་ཅན	dam can	ochránci vázaní přísahou	ochránc	fixed	„ochránc*" 63× ve vzorech vs „strážc*" 7× — sjednoceno 2026-07-28; „strážkyně" (4×) zůstává vyhrazeno pro sgo skyong (strážkyně bran)
+བདུད་རྩི	bdud rtsi	amrita	amrit	prov	ve vzorech „amrit*" 7×, „dütsi" 17×, „nektar" 40×. ROZHODNUTÍ UŽIVATELE 2026-07-29: používá se buď dütsi, nebo amrita — obojí je v pořádku, „nektar" se nevynucuje. Status prov právě proto, že se dvě řešení legitimně střídají; recenzent textu 5 chtěl plošně „nektar" s tvrzením „amrita 0×", což byla substringová past (cz dá 7×)
+སྨན་རཀ	sman rak	dütsi a rakta	dütsi	fixed	dvojice rituálních substancí: sman = dütsi (rozhodnutí uživatele 2026-07-29), rak = rakta. „amrita" pro sman ZAMÍTNUTA — amrita je bdud rtsi, ne sman; v ohňové oběti Pudri Rekpung seg 17 draft psal „amritu, raktu" a zaměnil tím dva různé termíny
