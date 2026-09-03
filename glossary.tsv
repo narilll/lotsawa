@@ -111,10 +111,10 @@
 #
 # --- open (not sent to prompts; decide first, then ask the user)
 ཐོར་ཐུན	thor thun		 	open	concord: v Troma Nagmo a Khandro Thuktik se pojí s ranní seancí („nam snga dro'i thun") — dřívější „závěrečná seance" je obrácené; navrhuji „přídavná seance"
-རྩང་དམར	rtsang dmar		 	open	hrozivá ozdoba tormy; „rudé kůly" je dohad, 9 výskytů napříč třemi cykly
+རྩང་དམར	rtsang dmar		 	open	hrozivá ozdoba tormy; „rudé kůly" je dohad, 9 výskytů napříč třemi cykly; hlavní sádhana 2026-09-03: text drží „rudé kůly“ s poznámkou, otázka pro učitele
 ཨེ་ཁྲམ	e khram		 	open	konstrukce v mandale (E + zkřížený khram)
 བཞི་སྙིང་གཅིག་དྲིལ	bzhi snying gcig dril	čtyři esenciální mantry spojené v jednu	esenciální	prov	16 výskytů v 5 textech cyklu
-དཔལ་གཏོར	dpal gtor		 	open	concord: v Khandro Thuktik popsána tvarem (gri gug, lotosové plátky) — jde o typ tormy, ne o „vznešenou tormu"
+དཔལ་གཏོར	dpal gtor	torma palgtor	palgtor	prov	concord: v Khandro Thuktik popsána tvarem (gri gug, lotosové plátky) — jde o typ tormy, ne o „vznešenou tormu"; rozhodnuto 2026-09-03 (hlavní sádhana): netransparentní název typu tormy
 བླ་མ	bla ma	mistr	mistr	fixed	tib-anchored arbitráž 13/20 bloků: mistr 13, guru 3, lama 3, učitel 1; „guru" jen v ustálených názvech (guru jóga, Guru Rinpočhe), „lama" ve výčtech (lamům, jidamům, dákiním) | učitel: Lama (specific), lama (general) | Lama
 ཚོགས་ཞིང	tshogs zhing	pole zásluh	pole zásluh	prov	2× ve vzorech; s vysvětlující vsuvkou „(hostů)" — samotné „hosté" (26×) překládá mgron, ne tshogs zhing
 འབྱུང་པོ	'byung po	džungpo	džungpo	fixed	„elementální duchové džungpo" 4× ve vzorech; „zlé síly" (anglické evil forces) zamítnuto. POZOR NA DVA SMYSLY: jako třída zlovolných bytostí = džungpo, ale `འབྱུང་པོ་ཆེ` v pozvání ohňové oběti je **epiteton Agniho** („velký pane živlů") — kontext to určí (hnědý kozel, „velký mudrc" drang srong, mantra ཨོཾ་ཨགྣ་ཡེ). V Planoucích paprscích ohně času seg 11 vyrobil tento klíč „velký džungpo" v oslovení boha ohně, tedy chybu ve významu; epiteton má poznámku v textu. Nezúžil jsem klíč, protože formát neumí negativní podmínku — tady rozhoduje redaktor
@@ -814,3 +814,8 @@
 རྒྱལ་འགོང	rgyal 'gong	gjalgong	gjalgong	prov	seg 575; třída zlovolných duchů, nepřekládat; G „démonů gjalpo, gongpo" (rozdělil složeninu na dvě), O „gjalgongů" — rgyal 'gong je jedna třída | terminolog 2026-09-03 (Pudri Rekpung — hlavní sádhana) | terminolog 2026-09-03 (hlavní sádhana Pudri Rekpung)
 སྲིན་པོ	srin po	rákšasa	rákšas	prov	segy 136, 181, 451; oba drafty shodně „rákšasa"; rdo rje srin po (seg 136) = vadžrový rákšasa | terminolog 2026-09-03 (Pudri Rekpung — hlavní sádhana) | terminolog 2026-09-03 (hlavní sádhana Pudri Rekpung)
 རུ་དྲ	ru dra	rudra	rudr	prov	segy 199, 280 (mantra ma tram ru dra mA ra ya); oba drafty „rudra"; srov. nový řádek ma hA ru dra = Mahárudra | terminolog 2026-09-03 (Pudri Rekpung — hlavní sádhana) | terminolog 2026-09-03 (hlavní sádhana Pudri Rekpung)
+
+# --- 2026-09-03 joint review decisions (main sādhana)
+སྐུ་གསུང་ཐུགས	sku gsung thugs	tělo, řeč a mysl	řeč	prov	triáda vždy „tělo, řeč a mysl“ (ne kája/osvícená mysl); phyag rgya v této triádě = pečeť; rozhodnuto 2026-09-03 (hlavní sádhana, 7 výskytů)
+གྲུབ་པའི་སློབ་དཔོན	grub pa'i slob dpon	mistr, který dosáhl uskutečnění	uskutečn	prov	seg 292 hlavní sádhany (grub pa'i slob dpon rnam gsum); rozhodnuto 2026-09-03; identita tří mistrů k ověření u učitele
+བརྟེན་པ	brten pa	opora (linga)	opor	prov	seg 508: rituální opora osvobození (linga/efigie), ne „závislá bytost“; rten gzhi = základ opory
