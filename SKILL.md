@@ -1,111 +1,160 @@
 ---
 name: lotsawa
-description: Translate Tibetan Buddhist practice texts (sadhanas, prayers, sur offerings) into Czech via a multi-agent workflow — independent translator, adversarial reviewer and back-translation check (four full drafts when an English translation exists), comparison, and final assembly. Use when the user asks to translate a Tibetan and/or English Buddhist text into Czech. Input is a file (EPUB, md, txt) or pasted text; output is text.md in the interlinear format defined in this skill.
+description: Use when the user asks to translate a Tibetan and/or English Buddhist practice text (sadhana, prayer, offering) into the target language set by the skill's `lotsawa.yaml` or the project's override. Input is a file (EPUB, md, txt) or pasted text; output is an interlinear `text.md`.
 ---
 
-# Lotsawa — Tibetan/English → Czech translator
+# Lotsawa — Tibetan/English → target language
 
-You (the main session) are the reviewer and editor-in-chief. You never translate alone
-and never accept a single draft unchecked: a translator produces the draft, an
-adversarial reviewer attacks it, a back-translation pass tests a sample for silent
-meaning loss, and you decide every contested segment and assemble the final text.
-Where an English translation exists, four full drafts replace the reviewer (see below).
+You (the main session) are the reviewer and editor-in-chief. You never translate alone and never accept a single draft
+unchecked: a translator produces the draft, an adversarial reviewer attacks it, a back-translation pass tests a sample for
+silent meaning loss, a proofreader reads the target language alone, and you decide every contested segment and assemble the
+final text. Where an English translation exists, four full drafts replace the reviewer.
 
-This skill is self-contained: every format and terminology rule it needs is defined
-below. Do not depend on other files in the working folder existing — previously
-translated texts, when present, only add to the rules here, never replace them.
+Every format rule this skill needs is defined below; target-language rules live in the four configuration files described
+below. Do not depend on other files in the working folder existing — previously translated texts only add to the rules here,
+never replace them. Mechanical steps (segmentation, comparison, assembly, lint) are done by `scripts/lotsawa.py` — **never write them inline
+in Python.**
 
-Mechanické kroky (segmentace, porovnání draftů, montáž, lint) dělá
-`scripts/lotsawa.py` — **nikdy je nepiš inline v pythonu.** Celý běh jednoho textu:
+## Configuration
+
+The skill is driven by four files. Each of them **ships with the skill and always applies**; a project overrides one by placing
+a file of the same name in the **project root** — the directory Claude Code was started in. There is no search chain and no path
+keys: either the project root has the file, or the skill default is used.
+
+| File | Holds | Used as |
+|---|---|---|
+| `lotsawa.yaml` | settings and the role cast | Read by you (the main session); see the keys below |
+| `glossary.tsv` | binding terminology | `glossary --prompt` (into every translator prompt) and `check` (drift report) |
+| `phonetics.md` | transcription rules | Handed to the `phonetics` role |
+| `style.md` | target-language style guide | Passed verbatim to translators and to the proofreader |
+
+`lotsawa.yaml` keys:
+
+| Key | Meaning |
+|---|---|
+| `target_language` | Language every draft is written in |
+| `max_expansion_ratio` | Passed as `--max-ratio` to `check` and `meter` |
+| `phonetics_lint` | `true` → pass `--pho-lint` to `build` |
+| `always_two_drafts` | `true` → `translator_2` runs for **every** text, not only Tibetan+English sources and texts over ~300 segments |
+| `pandita_tools` | List of companion skill directories the `pandita` may consult (e.g. `[dharmamitra]`); empty = the pandita works from the Tibetan alone |
+| `roles` | Per role: `backend`, `model`, optional `effort`, optional `fallback: {backend, model}` |
+
+**Merge:** a project `lotsawa.yaml` is a shallow merge over the skill default — top-level keys replace, `roles` merge **per
+role** (keys a project role does not specify are inherited), and any key the project omits keeps the default value. **The main
+session applies a role's `fallback`** when the primary backend fails (quota, timeout) and records the substitution in
+`drafts/notes.md`.
+
+Override example — a project `lotsawa.yaml` that moves only the reviewer to Codex:
+
+```yaml
+roles:
+  reviewer: {backend: codex, fallback: {backend: agent, model: opus}}
+```
+
+**At the start of every run, print one line naming the four files in effect** and whether each is the skill default or a project
+override, e.g. `config: lotsawa.yaml (project), glossary.tsv (project), phonetics.md (default), style.md (default)`. Every edit
+made during the work — a new glossary term, a new style bullet, a phonetics calibration — is written **to the file in effect**,
+never to the skill default when a project override exists.
+
+### Backend recipes
+
+`agent` — Agent tool, `model: {model}`, `run_in_background: true`. The whole prompt goes into `drafts/prompt-<role>.md` and the
+agent is told to read it.
+
+`copilot`:
+
+```bash
+cd <project root>
+SID=$(uuidgen)   # record in drafts/notes.md; enables follow-up questions
+copilot -p "Read '<text>/drafts/prompt-<role>.md' and carry out the task exactly as written." \
+  --model {model} --effort {effort} --allow-all-tools --no-color -s --log-level none \
+  --session-id "$SID" > '<text>/drafts/<role>.job.log' 2>&1
+```
+
+- `--allow-all-tools` is **mandatory** — without it non-interactive mode does not run at all and the draft is never written.
+- `--effort` values are model-specific and an unsupported value fails the run immediately; take the value from the role config,
+  do not invent one — when the role has no `effort`, omit the flag.
+- Run from the project root, not from the text subfolder. Never poll — `run_in_background` notifies you.
+- Follow-up: `copilot --session-id "$SID" -p '<question>' --allow-all-tools -s --no-color`.
+
+`codex` — `/sous-chef:fire`, one ticket per draft or per review, background jobs. **Do not set the model in the ticket**; it
+comes from the codex config. Run from the project root — the `workspace-write` sandbox is bound to cwd and rejects writes
+outside it, discarding the whole run. Add `--skip-git-repo-check` when the project is not a git repository. Never use
+`/sous-chef:serve` — its taste/refire stages duplicate the comparison in Step 3. Follow-up = a short `fire` ticket.
+
+After every delegation, arm one fallback wakeup (1200 s+) in case a job hangs, and cancel it once all drafts have landed.
+
+### Role → file
+
+| Role | Writes |
+|---|---|
+| `translator` | `drafts/translator-tib.md` / `drafts/translator-en.md` |
+| `translator_2` | `drafts/translator_2-tib.md` / `drafts/translator_2-en.md` |
+| `pandita` | `drafts/pandita.md` (Q&A log, **appended** per round — never overwritten) |
+| `reviewer` | `drafts/review.md` (`review-A.md` / `review-B.md` when split) |
+| `terminologist` | `drafts/terminology.md` |
+| `backtranslator` | `drafts/backtrans.md` |
+| `proofreader` | `drafts/proofread.md` |
+| `phonetics` | `drafts/pho_done.txt` / `drafts/mantra_done.txt` |
+
+`drafts/notes.md` records backend, model and session id per file.
+
+## Pipeline
 
 ```
 python3 <skill>/scripts/lotsawa.py segment original.md -o drafts/source.md
-# → 2 (nebo 4) drafty od překladatelů, viz Step 2
-python3 <skill>/scripts/lotsawa.py compare --source drafts/source.md \
-        --draft G=drafts/gemini-tib.md --draft C=drafts/codex-tib.md -o drafts/review.md
-python3 <skill>/scripts/lotsawa.py pho --source drafts/source.md -o drafts/pho_done.txt
-#   → fonetika se SKLÁDÁ Z LEXIKONU vzorových textů (~60 % veršů); zbytek jde do
-#     pho_todo.txt s ??? a doplní se podle pravidel v phonetics.md
-python3 <skill>/scripts/lotsawa.py build --source drafts/source.md \
-        --base drafts/<základ>.md --reuse ../ \
-        --reuse-bank /Users/prokop/texts/reference/mined/triplet_bank.tsv \
-        --pho drafts/pho_done.txt -o text.md
-# → ruční editace (titulní blok, poznámky, reklasifikace)
-python3 <skill>/scripts/lotsawa.py check text.md --original original.md
+python3 <skill>/scripts/lotsawa.py glossary --prompt                       # binding terminology, regenerate before every launch
+                                                                           # (the terminologist instead reads glossary.tsv directly, `open` rows included)
+python3 <skill>/scripts/lotsawa.py compare --source drafts/source.md --draft A=drafts/translator-tib.md --draft B=drafts/translator_2-tib.md -o drafts/review-compare.md
+python3 <skill>/scripts/lotsawa.py build --source drafts/source.md --base drafts/<base>.md --pho drafts/pho_done.txt [--mantra drafts/mantra_done.txt] [--pho-lint] -o text.md
+python3 <skill>/scripts/lotsawa.py check text.md --original original.md --max-ratio <max_expansion_ratio>
+python3 <skill>/scripts/lotsawa.py target text.md > drafts/target.txt      # target-language lines only, for the proofreader
+python3 <skill>/scripts/lotsawa.py meter text.md --max-ratio <max_expansion_ratio>
+python3 <skill>/scripts/lotsawa.py selftest                                # after any script edit
 ```
 
-Kontroly, které nepatří k jednomu textu, ale k celému cyklu:
+`check` and `glossary` resolve the glossary themselves (`./glossary.tsv` if the working directory has one, otherwise the skill
+default; the path is printed as `note: glossary = …` on stderr) — add `--glossary <path>` only when the project's glossary lives
+somewhere else. **Run the scripts from the project root**, so that resolution sees the project override.
 
-```
-python3 <skill>/scripts/lotsawa.py cz '<český výraz>' [--pho]     # doklad ve vzorech
-python3 <skill>/scripts/lotsawa.py glossary --audit               # opora glosáře
-python3 <skill>/scripts/lotsawa.py consist --corpus '<složka>'    # konzistence textů
-```
-
-- **`cz` nahrazuje ruční `grep -ho -i`** a existuje kvůli dvěma pastem, které v cyklu
-  Pudri Rekpung reálně způsobily chybu: podřetězec (`grep trvalost` najde
-  „vytrvalost", a přesně tak se do glosáře dostal nedoložený tvar) a velikost písmen.
-  Rozlišuje celé slovo / předponu / podřetězec a sám hlásí, když jsou doklady jen
-  uvnitř jiných slov. `--pho` počítá jen na fonetických řádcích a předponu neposuzuje
-  (fonetické tokeny se neskloňují: `THRI` by jinak „doložilo" `THRIN` z phrin las).
-- **`glossary --audit` je opačný směr než `--check`**: `--check` hlídá text proti
-  glosáři, `--audit` glosář proti vzorům. Hlásí `fixed` termíny, jejichž stem nemá
-  ve vzorech doklad. Pouštěj ho **před** cyklem, ne po něm — šest vad glosáře
-  (Džigdral, vidjádhara, vítězové, samaji a dva neinvariantní stemy) prošlo celým
-  prvním během Pudri Rekpung právě proto, že tuhle kontrolu nikdo neudělal.
-- **`consist`** hlídá, že týž tibetský řádek dostal napříč hotovými texty tutéž
-  češtinu. Banka tripletů to zajišťuje jen při buildu, takže text sestavený dřív,
-  než sourozenec existoval, o ní neví. **Nahlášený rozpor není automaticky vada:**
-  podmět může přicházet z předchozího segmentu, takže identický tibetský řádek
-  legitimně dostane jinou shodu. V ohňové oběti je `རང་གཞན་འཁོར་བཅས་ལ་ཐིམ་པས` 3× a má
-  „vplyne" tam, kde je podmětem singulární „esence požehnání", a „vplynou" v refrénech,
-  kde jsou podmětem „paprsky". `consist` je report pro člověka, ne gate — každý
-  rozpor přečti a rozhodni, nesjednocuj ho mechanicky.
-
-Pravidlo skriptu: **ztráta nebo poškození dat je fatální (exit 1), redakční soud je
-varování.** Exit 2 znamená „chybí fonetika" — není to chyba, `*_todo.txt` jsou
-zapsané. `check` pouštěj i po každé ruční editaci; právě tam vady dřív unikaly.
-`selftest` po každé úpravě skriptu.
+Script rule: **data loss or corruption is fatal (exit 1), editorial judgment is a warning.** Exit 2 means "phonetics missing" —
+not an error, the `*_todo.txt` files are written. Run `check` **after every manual edit** as well; that is where defects used to
+escape.
 
 ## Two source shapes
 
-| Zdroj | Obsazení | Kdy |
+| Source | Cast | When |
 |---|---|---|
-| **Jen tibetština** (wiki, `original.md` jako jeden dlouhý řádek) | překladatel + recenzent + zpětný překlad (viz Step 2) | Výchozí případ. Tsadra/Dudjom Wiki nemá anglické překlady. |
-| **Tibetština + angličtina** (EPUB Lotsawa House) | 4 drafty: `gemini-tib`, `gemini-en`, `codex-tib`, `codex-en` | Když zdroj nese anglický překlad — dva zdrojové jazyky dávají skutečnou perspektivní různost. |
+| **Tibetan only** (`original.md`, often one long line) | `translator` + `reviewer` + `backtranslator` | Default case. Wiki sources carry no English translation. |
+| **Tibetan + English** (e.g. Lotsawa House EPUB) | four drafts: `translator-tib`, `translator-en`, `translator_2-tib`, `translator_2-en` | When the source carries an English translation — two source languages give real diversity of perspective. |
 
-**Proč u tibetských zdrojů nejsou dva plné drafty výchozí:** dva modely na identickém
-zadání se rozcházejí většinou jen stylisticky, zatímco těžká místa (technická rituální
-terminologie) označí za nejistá **shodně** — a to je selhání, které porovnání draftů
-principiálně nezachytí. Redundanci proto nahrazuje různost rolí; dva plné drafty se
-platí jen tam, kde se nezávislé čtení vyplácí (kořenové termy, hlavní sádhany,
-> 300 segmentů).
+**Why two full drafts are not the default for Tibetan-only sources:** two models on an identical task diverge mostly in style,
+while the hard places (technical ritual terminology) get flagged as uncertain by **both** — a failure that comparing drafts
+cannot catch in principle. Role diversity replaces redundancy; two full drafts are paid for only where independent reading pays
+off (root terms, main sadhanas, > 300 segments).
+
+**`always_two_drafts: true` overrides this:** `translator_2` then always runs, whatever the source shape or length, and
+`compare` always gets two drafts.
 
 ## Step 1 — Prepare the source
 
 1. Load the input:
-   - **Tibetan-only `original.md`** (nejčastější): `lotsawa.py segment original.md -o
-     drafts/source.md`. Skript vybere dělítko (`༔` ≥ 2× → terma režim, jinak shad),
-     rozseká dlouhý úvodní blok bez `༔` na verše a prózu, otypuje segmenty
-     heuristicky (`?` = nejistý typ, vypíše seznam) a **povinně ověří rekonstrukci**
-     (segmenty spojené zpět == originál). Přehlédni `?` segmenty a typy uprav ručně;
-     u textů s prozaickou notací (rol tshig) vynuť `--delim shad`.
-   - **EPUB**: it is a ZIP — `unzip -o` into the scratchpad, find the XHTML content
-     files (usually under `OEBPS/` or `OPS/`), and run
-     `python3 <skill dir>/scripts/segment_lotsawa_epub.py <content.html> "<text folder>/drafts/source.md"`.
-     Do NOT require pandoc (not installed). Lotsawa House EPUBs mark paragraphs with
-     classes `tib-verse / pho-verse / eng-verse / tib-note / eng-note / tib / eng /
-     pho-mantra / eng-mantra`; the script pairs them into segments (a `tib-verse`
-     followed by `pho-mantra` is a mantra; the colophon starts at the rubric beginning
-     ཅེས་པ་འདི་ཡང་). For other EPUB layouts, adapt inline but keep the same
-     source.md format.
+   - **Tibetan-only `original.md`** (most common): `lotsawa.py segment original.md -o drafts/source.md`. The script picks a
+     delimiter (`༔` ≥ 2× → terma mode, otherwise shad), splits a long opening block without `༔` into verse and prose, types the
+     segments heuristically (`?` = uncertain type, listed on stdout) and **verifies the reconstruction** (segments joined back
+     == original). Review the `?` segments and fix types by hand; for texts with prose notation (rol tshig) force
+     `--delim shad`.
+   - **EPUB**: it is a ZIP — `unzip -o` into the scratchpad, find the XHTML content files (usually under `OEBPS/` or `OPS/`),
+     and run `python3 <skill>/scripts/segment_lotsawa_epub.py <content.html> "<text folder>/drafts/source.md"`. Do NOT require
+     pandoc (not installed). Lotsawa House EPUBs mark paragraphs with classes
+     `tib-verse / pho-verse / eng-verse / tib-note / eng-note / tib / eng / pho-mantra / eng-mantra`; the script pairs them into segments (a `tib-verse` followed by
+     `pho-mantra` is a mantra; the colophon starts at the rubric beginning ཅེས་པ་འདི་ཡང་). For other EPUB layouts, adapt inline
+     but keep the same source.md format.
    - **md / txt / pasted text**: segment manually into the same format.
-2. Classify the content. Tibetan script is the Unicode range U+0F00–U+0FFF. The source
-   may contain Tibetan only, or Tibetan + English translation. Keep the source's
-   English-style phonetics as `pho:` lines — they are the pronunciation crib for
-   Step 4; translators ignore them.
-3. `<text folder>/drafts/source.md` format — one segment = one verse line, one rubric,
-   one mantra, or one heading:
+2. Classify the content. Tibetan script is the Unicode range U+0F00–U+0FFF. The source may contain Tibetan only, or Tibetan +
+   English translation. Keep the source's English-style phonetics as `pho:` lines — they are the pronunciation crib for Step 4;
+   translators ignore them.
+3. `<text folder>/drafts/source.md` format — one segment = one verse line, one rubric, one mantra, or one heading:
 
    ```
    ## 12 [verse]
@@ -118,548 +167,287 @@ platí jen tam, kde se nezávislé čtení vyplácí (kořenové termy, hlavní 
    en: Recite seven times.
    ```
 
-   Types: `[verse]`, `[rubric]`, `[mantra]`, `[heading]`, `[colophon]`. All four
-   translators work from this same file; the final text is assembled by segment
-   number. Segment types are provisional — as reviewer you may reclassify one during
-   assembly (e.g. a Tibetan-only "verse" like guru pema siddhi hung that is really a
-   mantra); record every reclassification in notes.md.
+   Types: `[verse]`, `[rubric]`, `[mantra]`, `[heading]`, `[colophon]`. All translators work from this same file; the final text
+   is assembled by segment number. Segment types are provisional — as reviewer you may reclassify one during assembly (e.g. a
+   Tibetan-only "verse" that is really a mantra); record every reclassification in `drafts/notes.md`.
 
 ## Step 2 — Launch the translators in parallel
 
-Announce the delegation in one line first (what is handed off, to which models,
-expected wait). Then launch them concurrently — dva u tibetského zdroje, čtyři když
-je po ruce angličtina:
+Announce the delegation in one line first (what is handed off, to which roles, expected wait). Then launch them concurrently.
 
-**Tibetský zdroj — tři role:**
+**Tibetan source — three roles** (model: see config):
 
-| Soubor | Role | Model | Co dostane / co vrací |
-|---|---|---|---|
-| `drafts/gemini-tib.md` | Překladatel | `gemini-3.1-pro-preview` přes **copilot CLI** (příkaz níže); při výpadku Opus subagent | `source.md` + glosář (`glossary --prompt`) → plný draft |
-| `drafts/review-codex.md` | Adversariální recenzent | `gpt-5.6-sol` přes **Codex** (`/sous-chef:fire`, jeden ticket) | `source.md` + draft + glosář → **jen segmenty, kde namítá** (chyba věrnosti, porušená řádková korespondence, porušený glosář, nečeská formulace), vždy s návrhem alternativy |
-| `drafts/backtrans.md` | Zpětný překlad | Sonnet/Haiku (Agent tool) | **jen české řádky** vzorku segmentů → anglický gloss; recenzent-šéf ho porovná s tibetštinou |
+| Role | Gets / returns |
+|---|---|
+| `translator` | `source.md` + `glossary --prompt` + style guide → full draft |
+| `reviewer` | `source.md` + draft + glossary → **only the segments it objects to** (fidelity error, broken line correspondence, glossary violation, unidiomatic target phrasing), always with a proposed alternative |
+| `terminologist` | `source.md` + the draft(s) + the path to the glossary in effect (it reads the whole `glossary.tsv`, `open` rows included) → `drafts/terminology.md`. Runs **after the drafts land, in parallel with the reviewer.** Four sections: (a) violations of `fixed`/`prov` terms, by segment; (b) **context mismatches** — a glossary term applied where the Tibetan uses the word in another sense (e.g. `rig pa` = rigpa in the glossary, but in the triad སྣང་གྲགས་རིག་པ it is ordinary awareness); (c) Tibetan terms in the text with **no glossary row**, each with a proposed row in the exact TSV format `tib<TAB>wylie<TAB>target<TAB>stem<TAB>status<TAB>note` (status `prov`, note = the justification); (d) one Tibetan term rendered inconsistently within the draft(s). **Never edits the glossary** — the editor merges accepted rows. |
+| `pandita` | **On demand, not a batch pass.** Sees only the Tibetan (`source.md`), the segment numbers asked about, the editor's concrete numbered questions, and any reference material the project provides (e.g. a teacher's term list); **never sees or writes the target language.** Returns per question: literal gloss, grammatical analysis (particles, head of the compound, subject and number, honorific), ritual/lineage context, confidence (high/medium/low). When `pandita_tools` lists `dharmamitra`, the prompt names the skill path and the rule: consult it **only when unsure about a specific line or term**, never for whole segments in bulk, log every call with its result in `drafts/pandita.md`, respect the skill's call cap. Output **appended** to `drafts/pandita.md`. |
+| `backtranslator` | **only the target-language lines** of a sample → English gloss; you compare it against the Tibetan |
 
-Soubor recenze pojmenuj podle modelu, který ji psal — `review-codex.md`, `review-opus.md`.
-Pozdější revize potřebuje vědět, čí soud čte; `review-codex.md` napsané jiným modelem je past.
+Sample for back-translation: verses longer than the median plus everything the reviewer flagged (~30 segments or 10 % of the
+text).
 
-**Obsazení drží cross-model nezávislost bez placení druhým draftem.** Čtyři různé
-modely v řadě: Gemini překládá, GPT recenzuje, Sonnet zpětně překládá, Opus koriguje
-(Step 5). Dřív překládal i recenzoval Fable a nezávislost visela jen na zpětném
-překladu a korektuře — to už neplatí a je to hlavní důvod téhle sestavy.
+**The cast holds cross-model independence without paying for a second draft.** The reviewer is cheaper and its output directly
+actionable; back-translation is the only tool that catches silent meaning loss (where two drafts would err in agreement), which
+is why it sees **the target language only**.
 
-**Když recenzent nemůže běžet.** Codex spotřebuje na text 170–240 k tokenů a při
-vyčerpané kvótě běhy padají — dvakrát v cyklu Pudri Rekpung, vždy až po dopsání
-`review-codex.md`, takže artefakt přežil a ztratila se jen závěrečná zpráva
-(**podívej se po souboru, než recenzi pustíš znovu**). Náhrada je **Opus subagent**
-(Agent tool, `model: opus`) v téže roli, výstup do `review-opus.md`; ztrácí se cross-model
-kontrola proti Gemini draftu, ne nezávislost modelu. U kořenových termů a hlavních
-sádhan se na Codexe počkej, místo aby ses ho vzdal.
+**Tibetan + English — four drafts**: `translator` and `translator_2` each produce a `-tib` and an `-en` draft (primary source
+language stated in the prompt, the other as cross-check), each with its own session id. In this mode the reviewer role is not
+run.
 
-Kanonické spuštění překladatele — **z kořene repa**, `run_in_background: true`, prompt
-v souboru (glosář + Style guide se do `-p` argumentu neobalují):
+**Tibetan-only source** (no `en:` lines in source.md): do not launch the English roles or a second full draft — the three roles
+above suffice, and the prompt omits the sentence about cross-checking against English. Exception: root terms and main sadhanas
+(> 300 segments) also get `translator_2`; then review only after both drafts have been compared.
 
-```bash
-cd /Users/prokop/texts
-SID=$(uuidgen)                    # zapiš do drafts/notes.md — umožní doptání (Step 3.5)
-copilot -p "Přečti '<text>/drafts/prompt-gemini-tib.md' a splň zadání přesně podle něj." \
-  --model gemini-3.1-pro-preview --effort high \
-  --allow-all-tools --no-color -s --log-level none \
-  --session-id "$SID" > '<text>/drafts/gemini-tib.job.log' 2>&1
-```
+**Texts over ~300 segments**: split them per translator into halves (one ticket per half, `## 1–285` and `## 286–569`), then
+merge the drafts and let `compare` verify coverage: `--draft A=drafts/translator-A.md --draft A=drafts/translator-B.md`
+(**repeated label, not a comma** — folder names contain commas).
 
-- `--allow-all-tools` je **povinný** — bez něj non-interactive režim vůbec neběží
-  (ekvivalent `COPILOT_ALLOW_ALL=true`). Bez něj by copilot draft nezapsal.
-- `high` je u tohohle modelu **maximum**: `--effort` nabízí až `max`, ale
-  gemini-3.1-pro-preview přijímá jen `none / low / medium / high` a na `xhigh` i `max`
-  padá hned (`Reasoning effort "xhigh" is not supported for model …`) — změřeno.
-  Codex naproti tomu jede `xhigh`; ta asymetrie je vlastnost modelů, ne opomenutí.
-- Celý prompt podle šablony níže (role, řádková korespondence, Style guide verbatim,
-  `glossary --prompt`, kontrakt výstupu) napiš do `drafts/prompt-gemini-tib.md`; `-p`
-  je jen ukazatel na něj. Dlouhý prompt v argumentu je zbytečná past na quoting.
-- Spouštěj z kořene repa, ne z podsložky textu (týž důvod jako u Codexe níže).
-- Nikdy nepolluj; `run_in_background` ohlásí konec sám. Fallback wakeup 1200 s+ zůstává.
-- Dlouhé texty: `--max-ai-credits <N>` je soft cap na kredity session.
-- V copilotu je zapnutý plugin ponytail („lazy dev" persona). Ve smoke testu do
-  odpovědi nic neinjektoval; kdyby prosákl, doplň do promptu větu, že na překlad
-  neplatí.
-- Copilot **nepotřebuje git** (na rozdíl od `fire`) a `/Users/prokop` je v jeho
-  `trustedFolders`. Ověřeno smoke testem — po updatu CLI ho zopakuj:
-  `copilot -p "Odpověz přesně: LOTSAWA OK" --model gemini-3.1-pro-preview --allow-all-tools -s --no-color`
+**Review in halves already above ~150 segments.** The reviewer must read source, draft and glossary and verify every numeral, so
+it hits limits sooner than the translator and can die leaving no partial file. Write split reviews to `review-A.md` /
+`review-B.md` and **tell each half in its prompt that the other is running concurrently** — otherwise they overwrite each
+other's file.
 
-Recenzent je levnější než druhý plný draft a jeho výstup je přímo akcionovatelný.
-Zpětný překlad je jediný nástroj, který chytá tichou ztrátu významu (kde by se dva
-drafty mýlily souhlasně) — proto vidí **výhradně** češtinu. Vzorek: verše, které
-nepřišly z banky tripletů, delší než medián, plus vše, co označil recenzent
-(~30 segmentů nebo 10 % textu).
-
-**Tibetština + angličtina — čtyři drafty:**
-
-| Draft file | Translator | Source language | How to launch |
-|---|---|---|---|
-| `drafts/gemini-en.md` | Gemini (copilot CLI) | English (Tibetan as reference) | příkaz výše, vlastní `--session-id` |
-| `drafts/gemini-tib.md` | Gemini (copilot CLI) | Tibetan (English as reference) | příkaz výše, vlastní `--session-id` |
-| `drafts/codex-en.md` | Codex | English (Tibetan as reference) | `/sous-chef:fire`, one ticket |
-| `drafts/codex-tib.md` | Codex | Tibetan (English as reference) | `/sous-chef:fire`, one ticket |
-
-V tomhle režimu Codex překládá a recenzentská role se nespouští. Keep the draft
-filenames (`gemini-*`) even when Opus stands in for the copilot run, so the comparison
-step and notes stay comparable across texts; record the substitution in `drafts/notes.md`.
-
-**Tibetan-only source** (no `en:` lines in source.md): nespouštěj anglické role ani
-druhý plný draft — jde se třemi rolemi z tabulky výše a v promptu vynech větu
-o cross-checku s angličtinou. Výjimka: kořenové termy a hlavní sádhany (> 300
-segmentů) dostanou navíc druhý plný draft (`codex-tib.md`); pak recenzuj až po
-porovnání obou draftů.
-
-Codex runs via `/sous-chef:fire` — one ticket per draft (or per review), background
-jobs. Model neuváděj v ticketu: `fire` ho nechává propadnout do `~/.codex/config.toml`,
-kde je `gpt-5.6-sol` + `xhigh`. Do NOT use `/sous-chef:serve`: its taste/refire stages
-duplicate what the comparison in Step 3 already does. This repo is not a git repository,
-so add `--skip-git-repo-check` to the codex invocation; the tickets only create one new
-file each, so no git baseline is needed. Never poll the jobs; completion notifies you.
-After launching every delegation, arm one fallback wakeup (1200 s+) in case a job
-hangs, and cancel it once all drafts have landed.
-
-**Codex fire vždy z kořene repa** (`cd /Users/prokop/texts`) — sandbox
-`workspace-write` je vázaný na cwd, takže spuštění z podsložky textu zápis do jiné
-složky odmítne („cílový adresář je mimo zapisovatelný workspace") a celý run se
-zahodí. Přihodilo se to jednou; ticket byl v pořádku, jen cwd ne.
-
-**Texty nad ~300 segmentů** rozděl každému překladateli na poloviny (jeden ticket na
-polovinu, `## 1–285` a `## 286–569`), pak drafty slij a nech `compare` ověřit
-pokrytí: `--draft G=gemini-A.md --draft G=gemini-B.md` (opakovaný label, ne čárka —
-názvy složek obsahují čárky).
-
-**Recenzi dělej po polovinách už nad ~150 segmenty.** Recenzent musí přečíst zdroj,
-draft, glosář a u manuálů ověřit každou číslovku, takže spadne dřív než překladatel:
-recenze 167segmentového rituálu ohňové oběti umřela na `Request timed out` a
-nezanechala ani částečný soubor. Dělené recenze piš do `review-<model>-A.md` a
-`review-<model>-B.md` a **v promptu každé polovině řekni, že druhá běží současně** —
-jinak si soubor toho druhého přepíšou.
+**Look for the artifact file before rerunning a dead job**: a run often fails only after the draft or review has been written,
+losing nothing but the final report. Name the review file after the role, not the model, and **record the model in `drafts/notes.md`** —
+a later revision needs to know whose judgment it is reading.
 
 ### Translator prompt/ticket — canonical template
 
-Every translator prompt — copilot (`drafts/prompt-*.md`), Agent tool, or Codex ticket
-(`<task>`/`<constraints>`/`<done_when>`) — must contain:
+Every translator prompt — the `drafts/prompt-<role>.md` file for `agent` and `copilot`, or a Codex ticket (`<task>` /
+`<constraints>` / `<done_when>`) — must contain:
 
-- **Role** — translate into Czech PRIMARILY from the assigned source language, using
-  the other language only as a cross-check (state this explicitly; for the Tibetan
-  role add: "where your reading of the Tibetan differs from the English, follow the
-  Tibetan"). Add: "This is one of several independent drafts that a reviewer will
-  compare, so translate on your own judgment — do not hedge with alternatives."
-- **Line correspondence (mandatory, the key lesson of run 1)** — every Czech line
-  must correspond to its own Tibetan line; handle enjambment line by line; never
-  reorder lines even when the English translation does.
+- **Role** — translate into the target language PRIMARILY from the assigned source language, using the other language only as a
+  cross-check (state this explicitly; for the Tibetan role add: "where your reading of the Tibetan differs from the English,
+  follow the Tibetan"). Add: "This is one of several independent drafts that a reviewer will compare, so translate on your own
+  judgment — do not hedge with alternatives."
+- **Line correspondence (mandatory)** — every target-language line must correspond to its own Tibetan line; handle enjambment
+  line by line; never reorder lines even when the English translation does.
 - The path to `drafts/source.md` and the segment count N.
-- The complete **Style guide** section below, verbatim, plus the output of
-  `lotsawa.py glossary --prompt` (the binding terminology — never retyped by hand).
-- **Segment-type rules**: [verse] one recitable Czech line; [rubric] imperative 2nd
-  person singular; [heading] short Czech heading; [mantra] do not translate, output
-  a single em-dash; [colophon] translate, but keep a bibliographic Wylie citation
-  segment verbatim.
-- **Output contract**: write the assigned draft file; for every segment
-  `## <number> [<type>]` + one Czech line; all N segments, same numbering as
-  source.md, nothing else in the file. Verification (Codex `<done_when>`):
-  `grep -c '^## ' <draft>` prints N.
-- **Final reply (all translators)**: one line of confirmation + a numbered list of
-  segments where their reading diverges from the other language or they were unsure
-  (segment numbers + 3–5 words each). These divergence lists drive Step 3.
+- The **style file in effect (`style.md`) verbatim**, plus the output of `lotsawa.py glossary --prompt` verbatim (the binding
+  terminology — never retyped by hand).
+- **Segment-type rules**: [verse] one recitable line; [rubric] imperative, 2nd person plural, as defined in the style guide;
+  [heading] a short heading; [mantra] do not translate, output a single em-dash; [colophon] translate, but keep a bibliographic
+  Wylie citation segment verbatim.
+- **Output contract**: write the assigned draft file; for every segment `## <number> [<type>]` + one target-language line; all N
+  segments, same numbering as source.md, nothing else in the file. Verification: `grep -c '^## ' <draft>` prints N.
+- **Final reply**: one line of confirmation + a numbered list of segments where the reading diverges from the other language or
+  the translator was unsure (segment numbers + 3–5 words each). These divergence lists drive Step 3.
+
+The Codex `<done_when>` must include both the style guide having been applied and the grep count.
+
+### Pandita prompt — canonical template
+
+`drafts/prompt-pandita.md` must contain:
+
+- **Role** — you are the pandita, the meaning consultant: you explain what the Tibetan says. You do **not** translate and you
+  **never write the target language**; the editor decides the rendering.
+- **The Tibetan lines in question, with their segment numbers**, quoted from `drafts/source.md` — nothing else of the text, and
+  no target-language line.
+- **Numbered questions**, one per contested point: the Tibetan line and what exactly is in doubt.
+- **What to return per question**: literal gloss of the line; grammatical analysis (particles, head of the compound, subject and
+  number, honorific); ritual/lineage context; confidence `high` / `medium` / `low`.
+- Any reference material the project provides (a teacher's term list, when present).
+- **When `pandita_tools` lists `dharmamitra`**: the path to the `dharmamitra` skill (sibling directory `skills/dharmamitra`,
+  CLI `scripts/dharmamitra.py translate|grammar|search`, hard call cap per text, ethics rules inside its own SKILL.md) and the
+  rule — consult it only when unsure about a specific line or term, never for whole segments in bulk, log every call with its
+  result, respect the call cap.
+- **Output contract**: **append** to `drafts/pandita.md` under a dated round heading (`## <date> — round <n>`), one block per
+  question in the order asked. Never overwrite earlier rounds.
+- **Final reply**: one line of confirmation.
+
+### Terminologist prompt — canonical template
+
+`drafts/prompt-terminologist.md` must contain:
+
+- **Role** — audit the draft(s) against the glossary in effect; propose, never edit.
+- **Inputs**: the path to `drafts/source.md`, the path to each draft, and the path to the **glossary in effect** — read the
+  whole `glossary.tsv`, `open` rows included (not the `glossary --prompt` extract).
+- **The four output sections**: (a) violations of `fixed` / `prov` terms, by segment; (b) context mismatches — a glossary term
+  applied where the Tibetan uses the word in another sense; (c) Tibetan terms in the text with no glossary row; (d) one Tibetan
+  term rendered inconsistently within the draft(s).
+- **TSV row format** for every proposal in section (c), exactly: `tib<TAB>wylie<TAB>target<TAB>stem<TAB>status<TAB>note` —
+  status `prov`, note = the justification.
+- **Output contract**: write `drafts/terminology.md`, the four sections in this order, each finding with its segment number.
+  **Never edit `glossary.tsv`.**
+- **Final reply**: the counts per section (a/b/c/d).
 
 ## Step 3 — Compare and iterate
 
-0. **Každý sporný termín nejdřív protáhni konkordancí, teprve pak ho označ za
-   nejistý.** V repu leží ~196 tibetských originálů téže linie; termín neprůhledný
-   v jednom textu bývá jinde v jasnějším kontextu:
-   `lotsawa.py concord 'ཐོར་ཐུན'` prohledá originály **i hotové překlady** (u nich
-   vypíše, jak už termín byl přeložen). Ověřeno: u `ཐོར་ཐུན` dal Troma Nagmo vazbu
-   na ranní seanci, která vyvrátila dohad „závěrečná seance"; u `དཔལ་གཏོར` popis
-   tvaru z Khandro Thuktik. Do `notes.md` piš rozhodnutí s odkazem na nalezený
-   kontext; „nejisté" je až to, co konkordance neuzavře.
-
-   **Sporná česká formulace se ověřuje stejně, jen z druhé strany** — `concord` hledá
-   podle tibetštiny, ale ptát se je potřeba i „jak tohle vzory česky říkají":
-
-   ```
-   python3 <skill>/scripts/lotsawa.py cz '<český výraz>'
-   ```
-
-   **Nepiš si ten grep ručně.** `grep -ho -i '[^.]*X[^.]*'` má dvě pasti a obě
-   v tomto cyklu reálně způsobily chybu: `grep trvalost` najde i „vytrvalost" (takhle
-   se do glosáře dostal tvar s nula doklady) a `grep` bez `-i` mine malé písmeno
-   uvnitř složeniny („kílaj" v „Vadžrakílaji"). `cz` rozlišuje celé slovo, předponu
-   a podřetězec a sám hlásí, když jsou doklady jen uvnitř jiných slov.
-
-   Rozhoduje počet výskytů, ne dojem. Nula výskytů u termínu, který zní jako čeština,
-   znamená, že ho někdo vymyslel — přesně tak se do glosáře dostal „překážeč" (0×
-   ve vzorech, správně „tvůrci překážek", 11×) a rozeslal se všem překladatelům.
-   Než termín zapíšeš do `glossary.tsv` jako `fixed`, musí mít doložený počet v note
-   **a projít `glossary --audit`**.
-
-   Pozor na jedno: `glossary --check --file X` znamená „použij X jako glosář", ne
-   „zkontroluj text X". `--corpus` bere texty v jakékoli hloubce, takže
-   `--corpus /Users/prokop/texts` je audit celého repa.
-1. Terminologie: `lotsawa.py glossary --prompt` vygeneruje závaznou sekci do promptů.
-   **Generuj ji znovu bezprostředně před každým spuštěním překladatele**, ne jednou za
-   cyklus. Step 5 předchozího textu glosář rutinně mění (korektura ho v Pudri Rekpung
-   opravila u čtyř termínů), takže uložený prompt zastará během jednoho textu: text 5
-   překládal podle souboru, v němž ještě stálo `vítězové` a `samaji`, a recenzent to
-   pak nahlásil jako vadu překladu, i když to byla vada mého procesu.
-   `--check` ohlásí drift proti `glossary.tsv`. Konvence se do promptů nekopírují
-   ručně a **nemají cyklovou variantu** — glosář je jeden. Kromě toho projdi
-   `*/drafts/notes.md` hotových textů — rozhodnutí po segmentech tam vážou i tento
-   text.
-2. Wait for all drafts, pak `lotsawa.py compare`. Vypíše pokrytí (chybějící segment
-   = fatální), **kontaminaci tibetskou interpunkcí v českých řádcích** s doporučením
-   základu, segmenty s `ratio < 0.4` k ruční revizi a sporné mantry (jeden draft dal
-   `—`, druhý překlad). Kontaminace je reálná vada draftu: v jednom textu měl jeden
-   překladatel vlepenou tibetskou interpunkci v 57 z 63 segmentů — takový draft se
-   nesmí použít jako základ. Až pak čti divergenční seznamy od překladatelů.
-3. Criteria, in order: fidelity to the Tibetan; line correspondence with the Tibetan
-   (takes precedence over smoother reordering); recitability in Czech; terminology
-   consistency across this text and previous texts.
-4. When the English translation and the Tibetan original diverge, judge which reading
-   is the better translation and which fits the text as a whole — neither side wins
-   automatically.
-5. On unclear or contested segments, iterate — překladatele se doptej v jeho vlastní
-   session, ne novým během naslepo:
-   `copilot --session-id "$SID" -p '<cílená otázka>' --allow-all-tools -s --no-color`
-   (`-r "$SID"` je totéž; `$SID` je v `notes.md` ze Step 2). Pro Codex krátký
-   follow-up `/sous-chef:fire`. Do not settle a hard segment by majority vote alone.
-6. Record every substantive decision in `drafts/notes.md`: segment number, the
-   candidate renderings, the choice, and why.
+1. **Regenerate `glossary --prompt` immediately before each launch**, not once per batch: Step 5 of the previous text routinely
+   changes the glossary, so a stored prompt goes stale within a single text — and the reviewer then reports the stale term as a
+   translation defect. `check` reports drift of a text against the glossary in effect; conventions are never copied into
+   prompts by hand.
+2. Wait for all drafts, then run `compare`. It reports coverage (**a missing segment is fatal**), **Tibetan punctuation
+   contamination in target-language lines** with a base recommendation, segments with `ratio < 0.4` for manual review, and
+   disputed mantras (one draft gave `—`, the other a translation). Contamination is a real draft defect: **a contaminated draft
+   must not be used as the base**. Only then read the translators' divergence lists.
+3. Read `drafts/terminology.md` and `drafts/review.md`. Then, **before deciding any contested reading yourself, ask the
+   pandita.** Collect the contested segments — the reviewer's fidelity objections, ambiguities the back-translation exposed, the
+   terminologist's context mismatches, and your own doubts — into `drafts/prompt-pandita.md` as numbered questions (one Tibetan
+   line each, plus what exactly is in doubt) and run the role **once**; a second round only for follow-ups. Record its answers
+   and your decision in `drafts/notes.md`.
+4. Criteria, in order: fidelity to the Tibetan; line correspondence with the Tibetan (takes precedence over smoother
+   reordering); recitability in the target language; terminology consistency across this and previous texts. Where the English
+   translation and the Tibetan original diverge, judge case by case which reading is the better translation and which fits the
+   text as a whole — neither side wins automatically.
+5. On unclear or contested segments, iterate — **question the translator in its own session**, not in a fresh blind run
+   (follow-up command in the backend recipes; the session id is in `drafts/notes.md`). Do not settle a hard segment by majority vote
+   alone.
+6. Record every substantive decision in `drafts/notes.md`: segment number, the candidate renderings, the choice, and why.
 
 ## Step 4 — Assemble text.md
 
-1. Zvol základ (draft s nejmenší kontaminací dle `compare`) a spusť `lotsawa.py
-   build --source … --base … --reuse ../`. **Před opakovaným buildem odkliď
-   `text.md` toho textu, který staví.** `--reuse ../` globuje `*/text.md` včetně
-   vlastní složky, takže druhý build čte svůj vlastní předchozí výstup, a banka má
-   přednost před `--pho` i `--base` — oprava fonetiky nebo základu se pak tiše
-   zahodí a `text.md` zůstane na staré hodnotě. Poznávací znak: `bank` v souhrnu
-   vyskočí z jednotek na počet segmentů textu (`bank 1` → `bank 62`). `--reuse` staví **banku tripletů** ze
-   sourozeneckých `text.md` v cyklu: identické tibetské řádky (ikonografie,
-   rozpuštění, refrény, mantry) přeberou hotovou fonetiku i češtinu. Výtěžnost
-   v cyklu Pudri Rekpung: 105 z 569 segmentů u hlavní sádhany, 40 u kořenové termy,
-   26 u zmocnění — banka narostla na ~980 tripletů, takže pozdější texty jsou
-   výrazně levnější.
-2. Segmenty, které banka nepokryla, vypíše `build` do `pho_todo.txt` /
-   `mantra_todo.txt` a skončí s exit 2. **Pozor na formát dvou různých souborů:**
-   `--pho` bere dvě pole (`<segment>\t<FONETIKA>`), ale `--mantra` bere **tři**
-   (`<segment>\tpho\t<FONETIKA>`) — `load_tsv(cols=2)` staví vnořený slovník a
-   `build` z něj čte klíč `pho`. Mantrová fonetika vložená do `pho_done.txt`
-   se ignoruje a `build` mantry nahlásí jako chybějící; dvě pole v
-   `mantra_done.txt` skončí na „řádek nemá 3 polí". Fonetiku deleguj dávkově podle pravidel
-   v [phonetics.md](phonetics.md), pak `build` spusť znovu s `--pho`/`--mantra`.
-   **Slévání složenin už neděleguj** — `pho` si bigramový test dělá sám proti
-   fonetickým řádkům vzorů a slitá místa vypíše (`sloučeno dle vzorů: N×`). Je to
-   čisté počítání; subagent na tom spotřeboval ~150 k tokenů na text. Agentovi
-   zůstává doplnění neznámých slabik a sanskrt v mantrách. Co test principiálně
-   nechytá a nepředstírá to: vsunuté `n` (KHA + DRO → KHA**N**DRO) a trojslabičné
-   složeniny — ty hledej podle tibetské složeniny. Při příjmu `build` lintuje konvenci vzorů
-   (VERZÁLKY, bez délek, `PHET` ne `PHE`, `TSH` ne `CCH` — viz `phonetics.md`) a nové
-   fonetické tokeny proti korpusu (`WARN: DIKČHEN (nové) vs DIKČEN (14×)`).
-3. Ruční rozklad segmentu na podjednotky (typicky slitý úvodní blok, když ho
-   `segment` neroztrhal podle potřeby) patří do `drafts/overrides.json`:
-   `{"1": [["verse", "<tib>", "<čeština>"], …]}` — `build` ověří, že override pokrývá
-   celý tibetský obsah segmentu, a podjednotky číslo `1.1, 1.2…`. Nikdy nepřečísluj
-   segmenty, které už mají drafty.
-4. Titulní blok a kolofonní kredit dej do `drafts/front.txt` / `back.txt`
-   (`--front`/`--back`), kopírují se verbatim — editorial nepatří do skriptu.
-5. Po ručních editacích **vždy** `lotsawa.py check text.md --original original.md`.
-6. Footnotes: sparing — only where the reader needs help (ritual substances, names,
-   genuinely ambiguous lines). Inline Unicode superscripts (¹ ² ³), texts listed at
-   the end under `Poznámky:`. Propose them to the user rather than multiplying them.
-7. Keep `drafts/` (source.md, the drafts, notes.md, todo/done soubory) next to
-   text.md for later review. Do not scaffold the PDF pipeline (fonts, build_tex.py) —
-   text.md only.
-8. `drafts/notes.md`: rozhodnutí po segmentech, nová konvence, nejistá místa **a
-   který model draft pořídil, včetně copilot `--session-id`** (když Opus zaskakoval za
-   copilota, patří to do poznámek — jinak se pozdější revize nedozví, čí soud
-   srovnávala, a bez session ID se nedá doptat).
-9. Present a short report — **až po Step 5**: segments translated, notable
-   divergences, proposed footnotes, open questions for the user (including any new
-   phonetics calibration points — feed confirmed ones back into phonetics.md and new
-   conventions into the Established conventions list below).
+1. Choose the base: **the draft with the least contamination** per `compare`. Run
+   `build --source drafts/source.md --base drafts/<base>.md -o text.md`.
+2. Segments with no phonetics are written to `pho_todo.txt` / `mantra_todo.txt` and `build` exits 2. **Mind the two different
+   file formats:** `--pho` takes two fields (`<segment>\t<PHONETICS>`), `--mantra` takes **three**
+   (`<segment>\tpho\t<PHONETICS>`). Mantra phonetics put into `pho_done.txt` are ignored and `build` still reports the mantras
+   as missing; two fields in `mantra_done.txt` fail on "line does not have 3 fields".
+3. Delegate the phonetics in batch to the `phonetics` role, handing it the phonetics file in effect, then rerun `build`
+   with `--pho` / `--mantra`. Pass `--pho-lint` when `phonetics_lint: true`. On intake `build` lints the format (UPPERCASE
+   unconditionally; the transcription rules only under `--pho-lint`).
+4. Manual sub-segmentation (typically a fused opening block that `segment` did not split finely enough) goes into
+   `drafts/overrides.json`: `{"1": [["verse", "<tib>", "<translation>"], …]}` — `build` verifies that the override covers the
+   whole Tibetan content of the segment and numbers the sub-units `1.1, 1.2…`. **Never renumber segments that already have
+   drafts.**
+5. Title block and colophon credit go into `drafts/front.txt` / `drafts/back.txt` (`--front` / `--back`); they are copied
+   verbatim — editorial text does not belong in the script.
+6. After manual edits **always** rerun `check` (with `--original` and `--max-ratio`).
+7. Footnotes: sparing — only where the reader needs help (ritual substances, names, genuinely ambiguous lines). Propose them to
+   the user rather than multiplying them.
+8. Keep `drafts/` (source.md, the drafts, notes.md, todo/done files) next to text.md for later review. Do not scaffold a PDF
+   pipeline — text.md only. `drafts/notes.md` holds per-segment decisions, new conventions, uncertain places, **and which
+   backend and model produced each file, including the session id** (a fallback substitution belongs here too).
+9. An identical Tibetan line may legitimately get a different rendering when its subject carries over from the previous
+   segment — never unify such lines mechanically.
+10. Present a short report — **only after Step 5**: segments translated, notable divergences, proposed footnotes, open questions
+    for the user (including any new phonetics calibration points; feed confirmed ones back into the phonetics file in effect).
 
-## Step 5 — Korektura češtiny
+## Step 5 — Proofread the target language
 
-Poslední krok před reportem. Hlídá to jediné, co žádný předchozí krok nehlídá:
-**zní hotová čeština česky.** Codex recenzent nečeskou formulaci nahlásit smí, ale
-hlásí jen segmenty, kde má námitku; zpětný překlad měří výhradně věrnost; `check`
-a `meter` jsou kvantitativní proxy (expanze slabik, osiřelé řádky). Style guide
-níže tedy do téhle chvíle nikdo na výsledku nevymáhá.
+The last step before the report. It guards the one thing no previous step guards: **does the finished target language read
+naturally.** The reviewer reports only segments it objects to, back-translation measures fidelity alone, `check` and `meter` are
+quantitative proxies — nobody has yet enforced the style guide on the result.
 
-1. `lotsawa.py czech text.md > drafts/czech.txt` — jen české řádky, očíslované
-   čísly řádků `text.md`. Prázdné řádky zůstávají prázdné: hranice strof musí být
-   vidět, jinak nelze soudit opakování v sousedních řádcích.
-2. Spusť **jednoho** agenta (Agent tool, model **Opus**). Role: korektor českého
-   jazyka, redaktor textů určených k hlasité recitaci. **Vidí výhradně
-   `drafts/czech.txt` — nikdy originál, nikdy fonetiku.** S tibetštinou po ruce si
-   kalk omluví zdrojem („ale tibetsky to tak stojí"), a to je přesně vada, kterou
-   má najít; ze stejného důvodu vidí zpětný překlad jen češtinu.
-3. Prompt nese verbatim Style guide i celou sekci „Česká formulace" (níže) a tento
-   kontext proti falešným poplachům:
-   - buddhistický praxový text; počeštěné sanskrtské termíny (bódhičitta, dákiní,
-     samádhi, dharmata) jsou správné, ne chyba,
-   - vysvětlující vsuvky v kruhových závorkách jsou žádoucí, ne vada (19 % řádků
-     vzorů),
-   - rubriky patří do 2. osoby množného čísla imperativu,
-   - verš není věta: řádek bez podmětu nebo bez koncové interpunkce může být
-     správný, když navazuje na sousední řádek strofy — vada je až věta, která
-     nedrží pohromadě ani přes celou strofu,
-   - řádek, který není čeština (zbytek fonetiky minuskami, řádově dva na cyklus),
-     přeskoč bez komentáře,
-   - neznámé slovo se ověřuje ve vzorech, ne odhadem:
-     `grep -ho -i '[^.]*<výraz>[^.]*' /Users/prokop/texts/reference/mined/*.txt | head`
-     — nula výskytů je varovný signál, ne povolení.
-4. Výstup → `drafts/korektura.md`, jeden finding na řádek:
-   `ř.<N> | <typ> | <problém> | <návrh>`. Typy jsou uzavřená množina: `chybí
-   sloveso`, `skloňování/shoda`, `vymyšlené slovo`, `kalk`, `opakování`,
-   `slovosled`, `nevyslovitelné`, `rubrika mimo režim`, `ověř`. Žádná pochvala,
-   žádný komentář k věrnosti, **žádná editace `text.md`** — monolingvální čtenář
-   může „opravit" tak, že zahodí význam; rozhodnutí zůstává u redaktora.
-5. Vazby, které návrh nesmí porušit: **jeden řádek za jeden řádek** (řádková
-   korespondence s tibetštinou je nedotknutelná), mění se formulace, ne obsah.
-   Když řádek vypadá divně, ale může nést význam, který korektor bez originálu
-   nevidí, použije typ `ověř` a nenavrhuje nic.
-6. Redaktor projde findingy: každý návrh ověří proti tibetskému řádku v `text.md`,
-   aplikuje nebo zamítne, rozhodnutí zapíše do `drafts/notes.md`. Pak **znovu**
-   `lotsawa.py check text.md --original original.md`.
-7. **Vzorec zpátky do skillu.** Finding, který je třída vady, ne jednotlivost
-   (opakuje se napříč textem, nebo je to nový druh chyby), patří jako nová odrážka
-   do sekce „Česká formulace". Jinak ho příští překladatel udělá znovu — a tohle je
-   hlavní přínos celého kroku, per-text úklid je vedlejší.
+1. `lotsawa.py target text.md > drafts/target.txt` — target-language lines only, numbered by `text.md` line numbers. Blank lines
+   stay blank: stanza boundaries must be visible, or repetition in adjacent lines cannot be judged.
+2. Run **one** agent in the `proofreader` role. It **sees only `drafts/target.txt` — never the original, never the phonetics.**
+   With the Tibetan at hand a proofreader excuses a calque by the source, and that is exactly the defect it is there to find.
+3. The prompt carries the style file in effect verbatim, including its "Proofreader context" section (false-alarm context and the
+   closed set of finding types).
+4. Output → `drafts/proofread.md`, one finding per line: `line <N> | <type> | <problem> | <proposal>`. Types are the closed set
+   from the style file. No praise, no comments on fidelity, **no edits to `text.md`** — a monolingual reader can "fix" a line by
+   throwing away its meaning; the decision stays with the editor.
+5. Constraints a proposal must not break: **one line for one line** (line correspondence with the Tibetan is untouchable); the
+   phrasing changes, the content does not. When a line looks odd but may carry meaning the proofreader cannot see without the
+   original, it uses the `ověř` (verify) type and proposes nothing.
+6. The editor goes through the findings: verify each against the Tibetan line in `text.md`, apply or reject, record the decision
+   in `drafts/notes.md`. Then rerun `check`.
+7. **The pattern goes back into the style file.** A finding that is a class of defect rather than a one-off (it recurs across
+   the text, or it is a new kind of error) becomes a new bullet in the style file in effect. Otherwise the next translator makes
+   it again — and this is the main payoff of the whole step; the per-text cleanup is a side effect.
 
 ## Output format (text.md, interlinear)
 
-text.md is plain text (no markdown markup), one line per element:
+text.md is plain text (no markdown markup), one line per element. Target-language wording for the title block, the colophon
+credit and the footnote label is **taken from the style guide file**.
 
-- **Title block** — appears twice: once as the cover, then again before the body
-  after a gap of blank lines (the cover page):
-
-  ```
-  ༄༅། །<tibetský titul>
-  ČESKÝ TITUL VELKÝMI PÍSMENY
-  Podtitul, pokud existuje
-  složil {Autor} / od {Autora}          <- author in Czech transcription
-
-  <cca 18 prázdných řádků>
-
-  ༄༅། །<tibetský titul>
-  Český titul větnou sazbou (s podtitulem)
-  složil {Autor} / od {Autora}
-  ```
-
-- **Verse** — 3 consecutive lines:
+- **Title block** — appears twice: once as the cover, then again before the body after a gap of blank lines (the cover page):
 
   ```
-  <tibetský řádek>
-  <FONETIKA VERZÁLKAMI, jedna slabika = jeden token>
-  <český překlad>
+  ༄༅། །<Tibetan title>
+  TITLE IN CAPITALS
+  Subtitle, if any
+  <author line, form per the style guide>
+
+  <ca. 18 blank lines>
+
+  ༄༅། །<Tibetan title>
+  Title in sentence case (with subtitle)
+  <author line>
   ```
 
-- **Rubric** (instruction) — 2 consecutive lines, no phonetics (typeset italic in
-  the PDF): Tibetan line, Czech line v 2. osobě množného čísla. A rubric with no Tibetan in the source is a
-  single Czech line.
-- **Mantra** — **2 consecutive lines**: Tibetan + fonetika VERZÁLKAMI. Žádný řádek
-  IAST — vzorové texty jej neobsahují (`OM BENDZA KILI KILAJA HUNG PHET`).
-- **Heading** — a Czech line on its own (plus the Tibetan line when the source has
-  one).
-- **Colophon** — Tibetan line + Czech line, then a translator-credit paragraph in
-  Czech naming the source-language translators, publisher/site, year, and the
-  bibliographic citation, then the footnote list:
+- **Verse** — 3 consecutive lines: Tibetan line, then `<PHONETICS IN UPPERCASE, one syllable = one token>`, then the
+  translation. Uppercase phonetics is a **hard format requirement**: the scripts detect phonetic lines by their being
+  single-case.
+- **Rubric** (instruction) — 2 consecutive lines, no phonetics: Tibetan line, then the translation in the imperative mode the
+  style guide prescribes. A rubric with no Tibetan in the source is a single line.
+- **Mantra** — **2 consecutive lines**: Tibetan + UPPERCASE phonetics. **No IAST line** (Czech example: `OM BENDZA KILI KILAJA HUNG PHET`).
+- **Heading** — a translated line on its own (plus the Tibetan line when the source has one).
+- **Colophon** — Tibetan line + translated line, then the translator-credit paragraph (template in the style guide:
+  source-language translators, publisher/site, year, bibliographic citation), then the footnote list under the label the style
+  guide gives:
 
   ```
-  <tibetský kolofon>
-  <český kolofon>
+  <Tibetan colophon>
+  <translated colophon>
 
-  Do angličtiny přeložili {jména} pro {zdroj}, {rok}. Do češtiny přeloženo
-  z tibetštiny s přihlédnutím k anglickému překladu, {rok}. Zdroj: {citace}.
-  Poznámky:
-  <text poznámky 1>
-  <text poznámky 2>
+  <translator-credit paragraph>
+  <footnote label>
+  <footnote text 1>
+  <footnote text 2>
   ```
 
-- **Poznámky se značí římskými číslicemi přilepenými ke slovu** (`moudrosti,ii`),
-  v pořadí čtení; jejich texty stojí na konci textu ve stejném pořadí, uvozené touž
-  římskou číslicí. (Vzory: ~293 markerů; Unicode indexy ¹ ² ³ se nepoužívají.)
-- Blank line between stanzas and around headings; lines of one segment stay
-  contiguous (no blank line inside a verse/rubric/mantra triplet).
+- **Footnotes are marked with roman numerals attached to the word** (`moudrosti,ii`), in reading order; their texts stand at the
+  end of the text in the same order, introduced by the same roman numeral. Unicode superscripts (¹ ² ³) are not used.
+- Blank line between stanzas and around headings; the lines of one segment stay contiguous (no blank line inside a
+  verse/rubric/mantra group).
 
-## Style guide (pass verbatim to every translator)
+## Style guide (per language)
 
-- Přeložený text je určen k hlasité recitaci: překlad musí být věrný významu a
-  zároveň znít přirozeně česky — rytmus, přirozený slovosled, žádné kostrbaté kalky.
-- **Délka řádku**: naměřeno na 1683 verších vzorových textů — medián expanze
-  **2,33×**, p90 3,22×, p99 4,33×. Kandidát revize je až řádek nad **4,3×**. Měří
-  `lotsawa.py meter text.md`; `check` na to varuje.
-- **Vysvětlující vsuvky v kruhových závorkách jsou žádoucí**, ne výjimka — vzory je
-  mají v 19 % českých řádků: „(symbolizuje) jedinou sféru", „(Coby) sjednocení",
-  „není ani zabíjení ani (rituální) potlačování". Doplňují podmět, gramatický vztah
-  nebo krátký výklad, který by jinak musel do poznámky.
-- Každý český řádek odpovídá svému tibetskému řádku; pořadí řádků se nemění, ani
-  když je angličtina přeskládala.
-- Zavedené sanskrtské termíny nepřekládej, jen počešti pravopis: bódhičitta, sugata,
-  amrita, dákiní, samádhi, dharmata, mandala, stúpa. Nenahrazuj je českými opisy.
-- Používej zavedenou českou buddhistickou terminologii: útočiště, zásluhy, věnování,
-  bytosti, říše, zatemnění, soucit, Tři klenoty.
-- Rubriky (instrukce) piš v rozkazovacím způsobu **2. osoby množného čísla**:
-  připravte, vizualizujte, recitujte, proneste. (Vzory: recitujte 14×, vizualizujte
-  9×, singulár 0×.)
-- Vlastní jména v české transkripci: Džigme Lingpa, Rangdžung Dordže, Orgjen Tobgjal
-  Rinpočhe, Longčhen Ňingtik, Mipham Rinpočhe, Šákja Šrí, Guru Rinpočhe, Padmasambhava.
-- Konzistence: jeden tibetský termín = jedno české ustálené řešení v celém textu.
-- Výstup: očíslované segmenty přesně podle source.md, pouze čeština, jeden překlad na
-  segment.
+The style file in effect (`style.md`) is passed **verbatim** to every translator and to the proofreader. It must contain four
+sections: **Style guide** (recitability, line correspondence, Sanskrit and established Buddhist terminology, rubric mode,
+proper-name transcription, consistency, output contract, line-length thresholds for `--max-ratio`); **Target-language phrasing**
+(the recurring defect classes, with attested example phrases in the target language); **Colophon credit template** (credit
+paragraph, footnote-list label, title-block author line); **Proofreader context** (false-alarm context and the closed set of
+finding types used in `drafts/proofread.md`). `style.md` in the skill root is the default and the reference implementation; a
+project overrides it with its own `style.md`.
 
-### Česká formulace (nejčastější zdroj vad; čti pozorně)
+## Terminology
 
-- **Neopakuj totéž slovo ve dvou sousedních řádcích**, ani když ho opakuje tibetština
-  — sáhni po synonymu nebo řádek přeformuluj. Vzory synonyma mají: esence / podstata,
-  klam (12×) / zmatení (9×) / iluze (20×). Zákaz neplatí na refrén, kde je opakování
-  zjevný záměr. Špatně: „Esencí prázdné vědomí… / v tobě, esenci všech útočišť…";
-  „…bloudí v klamu / kéž se jejich klam rozplyne".
-- **Materiál se vyjadřuje předložkou, ne přídavným jménem**: „miska z lebky", „damaru
-  z lebek", „mála z lebečních kostí" — nikdy „lebeční miska", „lebeční damaru".
-  Přívlastek přidávej jen tam, kde ho tibetština nese (ཐོད = lebka); jinde stačí holý
-  termín, jak to dělají vzory: kapála (27×), damaru (12×).
-- **Nevymýšlej slova.** „Překážeč" ani „od bezpočátku" nejsou česky. Když si u slova
-  nejsi jistý, že existuje, tak neexistuje — opiš to: „tvůrce překážek", „od času bez
-  počátku". Totéž platí pro kalky z angličtiny.
-- **Termín, který neznáš, ověř ve vzorových překladech, ne odhadem:**
+The glossary in effect is the **single source** of terminology. Term lists do not belong in SKILL.md — they
+freeze on values the glossary has already corrected and get mailed to every translator.
 
-  ```
-  grep -ho -i '[^.]*<hledaný výraz>[^.]*' /Users/prokop/texts/reference/mined/*.txt | head
-  ```
+- **One glossary for all texts.** A folder of texts is a batch of work, not a scope of terminology; a per-batch glossary never
+  exists. A lineage noted on a term is provenance; its validity is global.
+- `fixed` requires an attestation count in `note`, or an explicit justification there.
+- With no evidence on either side, the **Tibetan phonetic transcription** wins; Sanskrit only where the target language already
+  uses it.
+- **New rows come from the terminologist's proposals** in `drafts/terminology.md`, after the editor has accepted them; a `prov`
+  term whose context mismatch the terminologist found gets a **context restriction in its `note`**.
+- A new or changed term goes into the glossary in effect with a note — not into SKILL.md and not only into `drafts/notes.md`. `drafts/notes.md`
+  holds decisions about a segment, the glossary holds the term.
+- Phonetics is not terminology — the phonetics file in effect rules there. `check` reports term drift against the glossary, so a
+  contradiction does not pass silently.
 
-  Nula výskytů u nově vymyšleného českého termínu je varovný signál, ne povolení.
-  Vzorové brožury jsou autorita; když se rozcházejí s tvou intuicí, platí vzory.
-- **Anglická transkripce vlastního jména do češtiny nepatří — a ověřuje se počtem.**
-  „Dudjom" je anglický zápis; vzory mají **Düdžom 75×** proti Dudjom 1×. Stejně
-  „Džigdräl" 15× proti „Džigdral" 1×. Obojí prošlo celým prvním během cyklu Pudri
-  Rekpung nepovšimnuto, protože jméno vypadá jako zavedené. Každé vlastní jméno
-  protáhni greppem vzorů, i když si jsi jistý; anglické formy (Dudjom, Tsogyal,
-  Thinley) se vlévají z bibliografií. Výjimka: bibliografická citace v kolofonu
-  zůstává v původním anglickém tvaru verbatim.
-- **Přečti si řádek nahlas.** Text se recituje; co se nedá vyslovit jedním dechem
-  nebo o co zakopne jazyk, přeformuluj.
-- **Verš nezačíná shlukem funkčních slov.** „se s prudkou touhou… klaním", „se ze
-  srdce raduji" — reflexivní „se" patří za první silné slovo: „s prudkou touhou a
-  vírou se neustále klaním", „ze srdce se raduji". Ve vzorech takový začátek verše
-  není a při recitaci o něj jazyk zakopne. (Nejčastější vada korektury: 3 řádky
-  v jednom textu.)
-- **Rozkazovací způsob, který se čte jako minulý čas, nahraď.** „vyšli sílu soucitu"
-  (vyslat) splyne při čtení nahlas s „vyšli" (vyjít) — piš „projev sílu soucitu".
-  Hlídej homografy u imperativů obecně.
-- **Číslo mluvčího drž podle tibetštiny, ne podle angličtiny.** `bdag` je „já" a
-  `bdag la` „mně"; anglické překlady to rutinně mění na „we/us" („grant us the four
-  empowerments"), a draft to pak přebere. V Deští požehnání se takhle posunuly čtyři
-  segmenty (97, 101, 103, 119) v textu, kde je mluvčí jinak celý singulární. Stejná
-  past u čísla podstatných jmen: `lus` = tělo, ne „svá těla".
-- **Kde angličtina přeskládala dvojverší, ověř řádkovou korespondenci explicitně.**
-  Nejde jen o pořadí celých řádků: anglický překlad často přetahuje na druhý řádek
-  koncové slovo prvního (`gdung shugs kyis`, `sgo gsum gyi`) nebo prohodí oslovení
-  s rozkazem. Draft to převezme a `compare` ani `check` na to nemají páku — v Deští
-  požehnání to byla nejcennější kategorie recenze (7 findingů: 21/22, 52/53, 73/74,
-  128/129). Recenzentovi to řekni v promptu jako samostatný úkol.
-- **`choť` je femininum**: genitiv singuláru „choti", ne „chotě" (to je mužský tvar);
-  instrumentál „s chotí". Vyskytuje se v každém textu s `yab yum`.
-- **Slova z počítačové a lékařské češtiny nepatří do praxového textu.**
-  „Vygenerování božstva" (vzory: „vytváření", „fáze rozvoje"), „pěti degeneracemi"
-  (0 dokladů; česky „pěti úpadky"). Zní odborně, a proto projdou — grep je odhalí.
-- **Titul, který se sází dvakrát, kontroluj dvakrát.** Obálka jde z `front.txt`, ale
-  segment 1 se sází z draftu; v Deští požehnání zůstalo v druhém výskytu nečeské
-  „Padou padající požehnání", zatímco obálka byla v pořádku.
-- **Jeden tibetský termín drž v celém textu stejně a variantu rozhodni počtem
-  ve vzorech, ne řádek po řádku.** V jednom textu se stejné `klong` přeložilo jako
-  prostor i „prostornost" (0× ve vzorech), `kun 'dus` jako ztělesnění i sjednocení
-  i vtělení (0×), `grub` jako realizace i uskutečnění — vždy vyhrává doložená
-  varianta. Než dopíšeš draft, projdi si vlastní termíny greppem výše.
+## Batch mode (a whole folder, dozens of texts)
 
-### Terminologie — jediný zdroj je `glossary.tsv`
+When the user hands over a whole folder. The batch is a unit of work, not a terminological scope — terminology stays global:
 
-Termíny do SKILL.md nepatří: závazný seznam generuje `lotsawa.py glossary --prompt`
-a jde v promptu každému překladateli. Dřív tu stály dvě sekce s termy; obě zamrzly na
-hodnotách, které glosář už opravil (Ješe Cchogjal, Velkolepý, přiblížení), a rozeslaly
-je překladatelům. Proto jsou pravidla, ne seznamy:
+1. **Order: shortest texts first, the largest last.** Conventions and phonetic calibrations established on a short prayer then
+   hold for the large sadhana; the other way round the large text is translated blind and has to be revised. The reuse bank
+   grows with every finished text, so the largest texts are the cheapest ones by the time their turn comes.
+2. Texts that quote another (notation citing incipits of the main sadhana, torma descriptions using its terminology) go
+   **after** the text they refer to.
+3. **Assembly is serial, delegation is pipelined.** One text = one full run of Steps 1–5 including `check`; do comparison and
+   assembly one text at a time, since that is where decisions are made and two half-done comparisons get confused. But pipeline
+   the delegations: the translator for text N+1 may run while you review text N. Never launch translators on five texts at once
+   — assembly becomes a queue and oversight is lost.
+4. Write new or changed terms into the glossary and per-segment decisions into the text's `drafts/notes.md` continuously — not
+   at the end, and never into SKILL.md. **Terminologist proposals accumulate across the batch: merge the accepted rows into the
+   glossary after each text**, so the next text's `glossary --prompt` already carries them.
+5. Realistic pacing: a dozen short-to-medium texts is about a day of work with batched delegations; a hundred or more should be
+   planned as batches across several days.
 
-- **Jeden glosář pro všechny texty.** Složka cyklu je dávka práce, ne rozsah
-  terminologie — per-cycle glosář nikdy nevzniká. Linie u termu je provenience,
-  platnost je globální.
-- **Autorita jsou vzorové brožury** v `reference/mined/`, a doklad se měří
-  **tib-anchored** (`pdfmine.py arbitrate`), ne greppem češtiny: „velkolepý" je
-  v referenci 5×, ale u `dpal chen` sedí 10 z 11 bloků na „velký slavný" — ta slova
-  tam překládají jiné termy. Grep je indicie, arbitráž rozhoduje.
-- `fixed` vyžaduje počet výskytů v `note`. Bez dokladu na žádné straně vyhrává
-  **tibetská fonetická transkripce**; sanskrt jen tam, kde ho vzory samy používají
-  (Vadžrakumára, Vadžradhara, Jamarádža, Padmasambhava).
-- Nový nebo změněný term piš do `glossary.tsv` s počtem v `note`, ne sem a ne jen do
-  `notes.md`. `notes.md` drží rozhodnutí o segmentu, glosář drží termín.
-- Fonetika není terminologie — pravidla drží [phonetics.md](phonetics.md), měřená na
-  vzorech. Starší pravidla skillu („húng ve verši / hung v mantře", `phe`, „koncové -l
-  nepřehlasuje") jsou tam **vyvrácena měřením**; `lotsawa.py check` hlásí drift termů
-  proti glosáři, takže tenhle rozpor už neprojde tiše.
+**When the working folder already holds finished `text.md` files**, three optional tools use them:
 
-## Těžba referenčních PDF (hotové vlastní překlady jako autorita)
-
-Hotové interlineární překlady v PDF (tibetština / fonetika / čeština) jsou lepší zdroj
-pravdy než odvozená pravidla. Těží je `scripts/pdfmine.py` (potřebuje `pdftotext`
-z poppleru; predikáty přebírá z `lotsawa.py`, nic neduplikuje):
-
-```
-python3 <skill>/scripts/pdfmine.py triage  reference/            # lze těžit? gate
-python3 <skill>/scripts/pdfmine.py extract reference/ -o reference/mined/
-python3 <skill>/scripts/pdfmine.py lexicon reference/mined/      # slabika → přepis + konflikty
-python3 <skill>/scripts/pdfmine.py bank    reference/mined/      # trojice pro build --reuse-bank
-python3 <skill>/scripts/pdfmine.py arbitrate reference/mined/ --glossary <skill>/glossary.tsv
-python3 <skill>/scripts/pdfmine.py style   reference/mined/      # expanze vs. náš korpus
-```
-
-- **`triage` je gate**: verdikt `text` (Unicode tibetština → plná těžba), `legacy`
-  (starý font, tibetština se vytáhne jako latinková hatmatilka → nahlásit, netěžit)
-  nebo `scan` (obrysy/sken → čti stránky přímo Readem; tesseract není a tibetské OCR
-  je nespolehlivé).
-- **Struktura se poznává podle pozice v bloku, ne podle stylu řádku** — fonetika
-  v PDF bývá VERZÁLKAMI, takže stylové detektory z `lotsawa.py` na ni nefungují.
-- **Zarovnání pro lexikon jen při shodě počtů** (tibetské slabiky vs. fonetické
-  tokeny); nezarovnatelný řádek se zahodí, nehádá se.
-- **Každý vytěžený řádek nese provenienci** (soubor + strana), jinak nelze rozhodnout
-  pozdější spor.
-- **Konflikt s `phonetics.md` řeší uživatel, ne skript.** Referenční PDF mohou používat
-  jiný systém (transliterace verzálkami: THUG, TSHOG, TRÜL) než pravidla skillu
-  (výslovnostní minusky: thuk, cchok, thrul). To je rozhodnutí o konvenci, ne chyba —
-  `lexicon` rozdíly jen vypíše.
-- **Nové vzorové brožury** patří do `reference/`; pak `pdfmine.py extract` + `lexicon`
-  + `bank`. Po každém přetěžení se přepočítá opora glosáře (grep ze Step 3) — termín,
-  který nově získal doklady, může povýšit z `prov` na `fixed`, a naopak `fixed` bez
-  opory je podezřelý. Víc vzorů je vždy lepší, ale mezera v překladu bývá spíš v tom,
-  že se korpusu nikdo nezeptal, než v tom, že by odpověď neznal.
-
-## Cyklový režim (celá složka, desítky textů)
-
-Když uživatel zadá celou složku cyklu (např. „spusť lotsawa na Pudri Rekpung"). Cyklus
-je **dávka práce, ne terminologický rozsah** — terminologie zůstává globální:
-
-1. **Pořadí: nejkratší texty první, největší nakonec.** Konvence a fonetické
-   kalibrace ustanovené na krátké modlitbě k linii a denní praxi pak platí pro
-   569segmentovou sádhanu; obráceně by se velký text překládal naslepo a musel se
-   revidovat. Banka tripletů zároveň s každým hotovým textem roste, takže největší
-   texty jsou nejlevnější, právě když se k nim dojde.
-2. Texty, které se odvolávají na jiné (notace `rol tshig` cituje incipity hlavní
-   sádhany; popisky torem používají její terminologii), odlož **za** text, na který
-   odkazují.
-3. **Sériová je montáž, ne delegace.** Jeden text = jeden úplný běh dle Steps 1–5
-   včetně `check`, a porovnání i montáž dělej po jednom — tam se rozhoduje a dvě
-   rozdělaná porovnání se pletou. Delegace ale pipelinuj: překladatel a fonetika pro
-   text N+1 mohou běžet, když recenzuješ text N. Původní pravidlo zakazovalo
-   paralelní překladatele s odůvodněním, že nedokončené texty blokují banku tripletů —
-   naměřeno na cyklu Pudri Rekpung to odůvodnění neplatí: `consist` našel mezi čtyřmi
-   hotovými texty **jediný** společný tibetský řádek a `build` hlásil `bank 1`.
-   Sdílené řádky se soustředí v hlavní sádhaně a textech, které ji citují; tam pořadí
-   drž, jinak je čekání zbytečné. Nikdy ale nepouštěj překladatele na pět textů
-   zároveň — montáž se stane frontou a přehled se ztratí.
-4. Nový nebo změněný term piš průběžně do `glossary.tsv` (s počtem výskytů v `note`)
-   a rozhodnutí o segmentu do `drafts/notes.md` textu, kde vzniklo — ne až na konci
-   a nikdy do SKILL.md.
-5. Realistický odhad: 13 textů (1,5–91 kB) ≈ celý den práce s dávkovými delegacemi;
-   100+ textů plánuj po dávkách napříč dny. Cena jednoho Codex draftu byla 50–167 k
-   tokenů podle délky textu.
+- `build --reuse <folder>` builds a bank from the sibling finished texts and reuses the phonetics and the translation of
+  Tibetan lines that are identical across texts (refrains, mantras, iconography descriptions). **The bank has precedence over
+  `--pho` and `--base`**: a correction to a line the bank covers must be made in the sibling text it comes from. `build`
+  excludes the output's own folder from the bank; if the `bank` count in the summary nevertheless jumps to the whole segment
+  count, the build read this text's previous `text.md` — delete it and rebuild.
+- `consist --corpus <folder>` reports the same Tibetan line rendered differently across texts. It is **a report for a human, not
+  a gate**: a subject carried over from the previous segment legitimately changes the rendering.
+- `glossary --check --corpus <folder>` reports the drift of every text in the folder against the glossary in effect.

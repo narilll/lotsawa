@@ -1,26 +1,37 @@
-# Globální glosář skillu lotsawa — JEDEN pro všechny texty, bez dělení podle linií.
-# Autorita: vzorové texty v reference/ (arbitráž `pdfmine.py arbitrate`, 25 brožur,
-# 2548 bloků). Složka cyklu je dávka práce, ne rozsah terminologie — per-cycle glosář
-# nevzniká; linie u termu je provenience, platnost je vždy globální.
-# Sloupce: tib \t wylie \t czech \t stem \t status \t note
-# status: fixed = závazné, kontroluje `lotsawa.py glossary --check`
-#         prov  = provizorní (do promptu jde, nekontroluje se)
-#         open  = nevyřešené, do promptu nejde
-# stem = NEJKRATŠÍ invariantní prefix (čeština palatalizuje: pohřebiště/pohřebišť);
-#        prázdné = czech bez posledních dvou znaků. Termíny, jejichž české řešení je
-#        sloveso nebo se legitimně střídá s opisem, patří do prov — vynutit je nelze.
-#        Stem musí být ROZLIŠUJÍCÍ: nesmí sedět i na zamítnuté variantě. U víceslovných
-#        termínů ber to slovo, které varianty odlišuje — „tvůrc", ne „překáž" (to sedí
-#        i na chybné „překážeči"; kvůli tomu vada roky procházela kontrolou).
-# TIBETSKÝ KLÍČ musí být stejně rozlišující jako stem: krátká slabika matchuje i své
-#        složeniny s jiným významem, a `check` pak šumí v každém textu. Doloženo dvakrát:
-#        ཐུགས (matchuje thugs rje = soucit, thugs ka = srdce) → zúženo na བླ་མའི་ཐུགས;
-#        ཐུན (matchuje thun mong = běžný, thun mthar = konec sezení) → na ཐུན་གྱིས.
-#        Když má slabika víc významů, klíčuj celou vazbu, ne slabiku.
-# fixed = DOLOŽENO VE VZORECH; počet výskytů patří do note. Bez opory v korpusu →
-#        prov, nebo fixed s výslovným zdůvodněním, proč termín ve vzorech být nemůže.
-#        Opora se ověřuje greppem, ne dojmem:
-#        grep -ho -i '[^.]*<výraz>[^.]*' /Users/prokop/texts/reference/mined/*.txt
+# Default glossary of the lotsawa skill (Czech). To change terminology for your project,
+# copy this file to the project root and edit the copy; a same-name file there overrides this one.
+# ONE glossary for all texts, not split by cycle. Authority: published Czech translations
+# (arbitration by comparing variant counts across them). A cycle's folder is a batch of work,
+# not a scope for terminology — there is no per-cycle glossary; a term's line records its
+# provenance, but validity is always global.
+# Columns: tib \t wylie \t target \t stem \t status \t note
+#   tib    = Tibetan
+#   wylie  = Wylie transliteration
+#   target = target-language rendering
+#   stem   = shortest invariant prefix used for drift checks; if empty the full target
+#            string is used — non-inflecting languages may leave it empty
+#   status = fixed = binding, enforced by `lotsawa.py glossary --check`
+#            prov  = provisional, sent to translators but not enforced
+#            open  = undecided, not sent to translators
+#   note   = attestation count or explicit justification; required for fixed
+#
+# stem: the SHORTEST invariant prefix (Czech palatalizes: pohřebiště/pohřebišť).
+#        Terms whose target-language solution is a verb, or legitimately alternates
+#        with a paraphrase, belong in prov — they cannot be enforced.
+#        The stem must be DISCRIMINATING: it must not also match a rejected variant.
+#        For multi-word terms, pick the word that distinguishes the variants — "tvůrc",
+#        not "překáž" (that also matches the wrong "překážeči"; this bug survived
+#        checks for years because of it).
+# TIBETAN KEY must be just as discriminating as the stem: a short syllable also
+#        matches its compounds with a different meaning, and `check` then produces
+#        noise in every text. Attested twice:
+#        ཐུགས (matches thugs rje = compassion, thugs ka = heart) → narrowed to བླ་མའི་ཐུགས;
+#        ཐུན (matches thun mong = ordinary, thun mthar = end of session) → to ཐུན་གྱིས.
+#        When a syllable has several meanings, key the whole phrase, not the syllable.
+# fixed = ATTESTED IN PUBLISHED CZECH TRANSLATIONS; the occurrence count goes in note.
+#        Without support in published Czech translations → prov, or fixed with an explicit
+#        justification for why the term cannot appear there. Support is verified by
+#        grepping, not by impression.
 #
 # --- jména a klíčové postavy (provenience Pudri Rekpung / Vadžrakilája)
 སྤུ་གྲི་རེག་ཕུང	spu gri reg phung	Břitva, jež ničí dotekem	dotek	prov	nikoli „dotykem"; název cyklu
@@ -34,39 +45,39 @@
 ཤཱ་ཀྱ་ཤྲཱི་ཛྙཱ་ན	shAkya shrI dz+nyA na	Šákja Šrí Džňána	Šákja	prov	mimo referenční korpus; kolofon dodatku k Sedmiřádkové modlitbě
 #
 # --- klíčové termíny
-ཕྲིན་ལས	phrin las	osvícená aktivita	aktivit	fixed	bare „aktivita" jen ve výčtu čtyř aktivit
+ཕྲིན་ལས	phrin las	osvícená aktivita	aktivit	fixed	bare „aktivita" jen ve výčtu čtyř aktivit | učitel: enlightened activity | Buddha-Aktivität
 སྒྲོལ་བ	sgrol ba	osvobození	osvobo	fixed	dle vzorů (0/3 shoda s „vysvobození"); i jako sloveso „osvobodit"
-ཐིག་ལེ	thig le	thigle	thigle	fixed	26× ve vzorech vs. „sféra" 6× — rozhodnuto uživatelem 2026-07-28; skloňuje se jako neutrum nesklonné („v bílo-červené thigle")
+ཐིག་ལེ	thig le	thigle	thigle	fixed	26× ve vzorech vs. „sféra" 6× — rozhodnuto uživatelem 2026-07-28; skloňuje se jako neutrum nesklonné („v bílo-červené thigle") | učitel: [essential] drop, bindu | Essenztropfen, Bindu
 དགྲ་བགེགས	dgra bgegs	nepřátelé a tvůrci překážek	tvůrc	fixed	„tvůrci/tvůrce překážek" 11× ve vzorech; „překážeč" 0× — zamítnuto (není české slovo), rovněž ne „překážející síly", ne „protivníci"
-བགེགས	bgegs	tvůrci překážek	tvůrc	fixed	samostatně, bez dgra; táž evidence jako dgra bgegs
-ངོ་བོ	ngo bo	esence	esenc	fixed	96× ve vzorech vs. „podstata" 4×; „podstata" jen tam, kde by esence v řádku kolidovala
-ཐུགས་དམ	thugs dam	posvátný svazek srdce	svaz	prov	v titulech „posvátný svazek srdce"; ve verších naplnění (thugs dam bskang) vzory volí funkční „kéž jsou tvá přání vyplněna"
+བགེགས	bgegs	tvůrci překážek	tvůrc	fixed	samostatně, bez dgra; táž evidence jako dgra bgegs | učitel: hindrance | Hinderer
+ངོ་བོ	ngo bo	esence	esenc	fixed	96× ve vzorech vs. „podstata" 4×; „podstata" jen tam, kde by esence v řádku kolidovala | učitel: essence | Essenz
+ཐུགས་དམ	thugs dam	posvátný svazek srdce	svaz	prov	v titulech „posvátný svazek srdce"; ve verších naplnění (thugs dam bskang) vzory volí funkční „kéž jsou tvá přání vyplněna" | učitel: heart bonds | die Herzensbande — Plural
 སྲིད་ཞི	srid zhi	samsára a nirvána	samsár	fixed	ne „bytí a mír"
-ཡེ་ཤེས	ye shes	moudrost	moudrost	fixed	bez „prvotní"
-རྒྱལ་བ	rgyal ba	Vítězní	vítězn	fixed	adjektivní tvary 48×: „Vítězný" 25×, „Vítězných" 17×, „Vítězné" 4×, „Vítězní" 2×; nominální „vítězové" 0×, „Vítězům" 0×, „Vítězů" 0× — opraveno 2026-07-28; dřívější české pole bylo nedoložené, i když si toho poznámka sama všímala
+ཡེ་ཤེས	ye shes	moudrost	moudrost	fixed	bez „prvotní" | učitel: jñāna, pristine awareness, wisdom | Weisheit
+རྒྱལ་བ	rgyal ba	Vítězní	vítězn	fixed	adjektivní tvary 48×: „Vítězný" 25×, „Vítězných" 17×, „Vítězné" 4×, „Vítězní" 2×; nominální „vítězové" 0×, „Vítězům" 0×, „Vítězů" 0× — opraveno 2026-07-28; dřívější české pole bylo nedoložené, i když si toho poznámka sama všímala | učitel: Victorious One, Victorious Ones | Siegreicher, die Siegreichen — Jina
 སྲས་བཅས	sras bcas	vítězů i jejich synů	syn	prov	rgyal ba sras bcas; skloňuje se, proto prov
-ཆོས་སྐུ	chos sku	dharmakája	dharmakáj	fixed	29×; kája je ženského rodu („ve vrozené dharmakáji")
+ཆོས་སྐུ	chos sku	dharmakája	dharmakáj	fixed	29×; kája je ženského rodu („ve vrozené dharmakáji") | učitel: dharmakaya, Dharma body | Dharmakaya, Dharma-Körper
 སྐུ་གསུམ	sku gsum	tři káje	káj	fixed	„tří kájí" 18×; ženský rod
 ཕྱག་རྒྱ	phyag rgya	mudra	mudr	prov	v sku gsung thugs kyi phyag rgya legitimně „pečeť", jinak „mudra"
-དུར་ཁྲོད	dur khrod	pohřebiště	pohřebišt	fixed
-རིག་འཛིན	rig 'dzin	vidjadhára	vidjadhár	fixed	„vidjadhár*" 19× ve vzorech („vidjádhár*" 5×), „vidjádhar*" 0× — opraveno 2026-07-28; dřívější tvar glosáře byl bez opory a přepisoval správný tvar z banky tripletů
+དུར་ཁྲོད	dur khrod	pohřebiště	pohřebišt	fixed	učitel: charnel ground | Leichenplatz
+རིག་འཛིན	rig 'dzin	vidjadhára	vidjadhár	fixed	„vidjadhár*" 19× ve vzorech („vidjádhár*" 5×), „vidjádhar*" 0× — opraveno 2026-07-28; dřívější tvar glosáře byl bez opory a přepisoval správný tvar z banky tripletů | učitel: awareness holder | Gewahrseinshalter — Vidyādhara
 དངོས་གྲུབ	dngos grub	siddhi	siddhi	fixed	nepřekládat
 རིག་མ	rig ma	družka poznání	druž	fixed
 སྔགས་ཕྲེང	sngags phreng	řetězec mantry	řetěz	fixed	dle vzorů (ne „girlanda mantry"); stem zkrácen na „řetěz" 2026-07-28 — „řetězec" není invariantní prefix (řetězce/řetězců mají vkladné -e-) a `check` hlásil drift na správných tvarech
 ངན་སྔགས	ngan sngags	zhoubná mantra	zhoubn	prov	ve vzorech málo dokladů (arbitráž 0/1); drag sngags = hněvivá mantra
-དམ་ཡེ	dam ye	bytost samají a moudrosti	samaj	fixed	dam tshig pa / ye shes pa; „samají" 39× ve vzorech vs „samaji" 1× — opraveno 2026-07-28
-འདོད་ཡོན	'dod yon	smyslová potěšení	potěš	fixed
+དམ་ཡེ	dam ye	bytost samají a moudrosti	samaj	fixed	dam tshig pa / ye shes pa; „samají" 39× ve vzorech vs „samaji" 1× — opraveno 2026-07-28 | učitel: samaya and jñāna aspects | Verbindungs- und Weisheitsaspekte
+འདོད་ཡོན	'dod yon	smyslová potěšení	potěš	fixed	učitel: sense pleasures | Sinnesfreuden
 ཐལ་འབྱིན	thal 'byin	probodávající proniknutí	proniknut	prov	thal 'byin rnam bzhi = čtvero probodnutí; technický termín, k ověření
 #
 # --- fáze praxe a aktivity
 བསྙེན་པ	bsnyen pa	fáze přístupu	přístup	fixed	dle vzorů; ponechaná transkripce „ňenpa" v technickém kontextu
-སྒྲུབ་པ	sgrub pa	uskutečnění	uskuteč	prov	vzory volí „uskutečnit" i „realizace" podle kontextu
-ལས་སྦྱོར	las sbyor	praxe aktivity	aktivit	fixed	dle vzorů (ne „uplatnění aktivity")
+སྒྲུབ་པ	sgrub pa	uskutečnění	uskuteč	prov	vzory volí „uskutečnit" i „realizace" podle kontextu | učitel: to accomplish | verwirklichen; verwirklichen, vollbringen
+ལས་སྦྱོར	las sbyor	praxe aktivity	aktivit	fixed	dle vzorů (ne „uplatnění aktivity") | učitel: activity application | Aktivitätsanwendung
 ཞི་བ	zhi ba	mírná	mírn	prov	čtyři aktivity: mírná / rozšiřující / mocenská / hněvivá
 རྒྱས་པ	rgyas pa	rozšiřující	rozšiř	prov	čtyři aktivity; vzory formulují volněji
 དྲག་པོ	drag po	hněvivá	hněviv	prov
 ཚར་གཅོད	tshar gcod	vyhlazení	vyhla	prov
-སྨད་ལས	smad las	nižší aktivity	nižší	fixed
+སྨད་ལས	smad las	nižší aktivity	nižší	fixed	učitel: lower activity | Niedere Aktivität — LOTR: Niedrig heißt hier eigentlich "nachfolgend" im Sinne von der Höheren Aktivität (Erleuchtung für einen selbst) nachfolgend
 #
 # --- bytosti a ochránci
 བརྟན་མ	brtan ma	tenma	tenma	prov	bohyně tenma
@@ -83,7 +94,7 @@
 # --- rituální náčiní a substance
 དགང་གཟར	dgang gzar	plnicí naběračka	naběrač	prov	mimo referenční korpus (0 dokladů) — nelze vynucovat
 བླུགས་གཟར	blugs gzar	obětní lžíce	lžíc	prov	mimo referenční korpus (0 dokladů) — nelze vynucovat
-ཟོར	zor	zor	zor	fixed	nepřekládat; 74×
+ཟོར	zor	zor	zor	fixed	nepřekládat; 74× | učitel: magic weapon | Magiewaffe
 ཐོད་པ	thod pa	kapála	kapál	fixed	27× ve vzorech; „miska z lebky" 4× tam, kde je thod výslovně; „lebeční miska" 0× — zamítnuto. POZOR, KLÍČ JE ŠIROKÝ: `thod pa` = rituální miska, ale ve složeninách znamená `thod` prostě lebku jako materiál nebo část těla — `ཐོད་པའི་སྒ` je „sedlo z lebky" (Planoucí paprsky seg 8), `ཐོད་རྔ` má vlastní položku „damaru z lebek". Tam „kapála" nepatří a `check` hlásí falešný poplach; materiál se vyjadřuje předložkou („z lebky"), ne přívlastkem
 ཀ་པ་ལ	ka pa la	kapála	kapál	fixed	totéž co thod pa
 ཐོད་བུམ	thod bum	kapála s vázou	kapál	prov	složenina thod pa + bum pa; 0 přímých dokladů, řídí se pravidlem o materiálu („lebeční miska" zamítnuta)
@@ -98,13 +109,13 @@
 ཌཱརྐ	DAr ka	darka	darka	prov
 ཡོ་སྤྱི	yo spyi	jo-či	jo-či	prov	nápěv
 #
-# --- nevyřešené (do promptu nejdou; nejdřív concord, pak dotaz)
+# --- open (not sent to prompts; decide first, then ask the user)
 ཐོར་ཐུན	thor thun		 	open	concord: v Troma Nagmo a Khandro Thuktik se pojí s ranní seancí („nam snga dro'i thun") — dřívější „závěrečná seance" je obrácené; navrhuji „přídavná seance"
 རྩང་དམར	rtsang dmar		 	open	hrozivá ozdoba tormy; „rudé kůly" je dohad, 9 výskytů napříč třemi cykly
 ཨེ་ཁྲམ	e khram		 	open	konstrukce v mandale (E + zkřížený khram)
 བཞི་སྙིང་གཅིག་དྲིལ	bzhi snying gcig dril	čtyři esenciální mantry spojené v jednu	esenciální	prov	16 výskytů v 5 textech cyklu
 དཔལ་གཏོར	dpal gtor		 	open	concord: v Khandro Thuktik popsána tvarem (gri gug, lotosové plátky) — jde o typ tormy, ne o „vznešenou tormu"
-བླ་མ	bla ma	mistr	mistr	fixed	tib-anchored arbitráž 13/20 bloků: mistr 13, guru 3, lama 3, učitel 1; „guru" jen v ustálených názvech (guru jóga, Guru Rinpočhe), „lama" ve výčtech (lamům, jidamům, dákiním)
+བླ་མ	bla ma	mistr	mistr	fixed	tib-anchored arbitráž 13/20 bloků: mistr 13, guru 3, lama 3, učitel 1; „guru" jen v ustálených názvech (guru jóga, Guru Rinpočhe), „lama" ve výčtech (lamům, jidamům, dákiním) | učitel: Lama (specific), lama (general) | Lama
 ཚོགས་ཞིང	tshogs zhing	pole zásluh	pole zásluh	prov	2× ve vzorech; s vysvětlující vsuvkou „(hostů)" — samotné „hosté" (26×) překládá mgron, ne tshogs zhing
 འབྱུང་པོ	'byung po	džungpo	džungpo	fixed	„elementální duchové džungpo" 4× ve vzorech; „zlé síly" (anglické evil forces) zamítnuto. POZOR NA DVA SMYSLY: jako třída zlovolných bytostí = džungpo, ale `འབྱུང་པོ་ཆེ` v pozvání ohňové oběti je **epiteton Agniho** („velký pane živlů") — kontext to určí (hnědý kozel, „velký mudrc" drang srong, mantra ཨོཾ་ཨགྣ་ཡེ). V Planoucích paprscích ohně času seg 11 vyrobil tento klíč „velký džungpo" v oslovení boha ohně, tedy chybu ve významu; epiteton má poznámku v textu. Nezúžil jsem klíč, protože formát neumí negativní podmínku — tady rozhoduje redaktor
 འགགས་མེད	'gags med	bez překážek	bez překážek	fixed	5× ve vzorech; „nezadržitelný" 0× — zamítnuto
@@ -112,17 +123,17 @@
 ཚོགས་ཀྱི་འཁོར་ལོ	tshogs kyi 'khor lo	ganačakra	ganačakr	fixed	9× ve vzorech; „kolo tsoku" 0× — zamítnuto; tshogs mchod = obětina tsoku (8×)
 ལྷག་གཏོར	lhag gtor	zbytková torma	zbytkov	fixed	8× ve vzorech
 ཐོག་མེད་ནས	thog med nas	od času bez počátku	od času bez počátku	fixed	varianta zápisu thog ma med pa nas
-ཀློང	klong	prostor	prostor	fixed	„prostornost" 0× ve vzorech, „prostor(u)" 137+36×; dbyings = základní prostor, klong holý prostor
+ཀློང	klong	prostor	prostor	fixed	„prostornost" 0× ve vzorech, „prostor(u)" 137+36×; dbyings = základní prostor, klong holý prostor | učitel: expanse | Weite
 ཀུན་འདུས	kun 'dus	ztělesnění	ztěles	fixed	ztělesnění 13× („jediné ztělesnění všech Vítězných"), „vtělení" 0× — zamítnuto
 བླ་མའི་ཐུགས	bla ma'i thugs	osvícená mysl mistra	osvícen	fixed	„osvícené mysli" 14×, „moudrá mysl" 0× — zamítnuto; klíč je záměrně zúžený, samotné ཐུགས matchuje i thugs rje (soucit) a thugs ka (srdce)
-སྣང་སྲིད	snang srid	jevová existence	jevov	fixed	„jevové existence" 28× + „jevová existence" 3×; „vše jevové i jsoucí" 0× — zamítnuto
+སྣང་སྲིད	snang srid	jevová existence	jevov	fixed	„jevové existence" 28× + „jevová existence" 3×; „vše jevové i jsoucí" 0× — zamítnuto | učitel: appearance and becoming | Erscheinungswelt und Wesen
 ཤིས་པ་བརྗོད	shis pa brjod	verše příznivosti	příznivost	fixed	„verše příznivosti" 4×, „slova přízně" 0× — zamítnuto
 དམ་རྫས	dam rdzas	substance samají	samají	fixed	„substance samají" 8×, „substance samaji" 0× — genitiv plurálu
 འགྲུབ་པར་ཤོག	'grub par shog	dosáhneme realizace	realizac	fixed	tentýž verš (dkyil 'khor gcig tu 'grub par shog) je ve vzorech 2× jako „dosáhneme realizace"; „uskutečnění" pro grub zamítnuto
-རྒྱུད	rgyud	proud bytí	proud bytí	prov	0× ve vzorech („proud mysli" 1×, „kontinuum" pro jiné termy); Lotsawa House „your very being" — rgyud zde není jen mysl
+རྒྱུད	rgyud	proud bytí	proud bytí	prov	0× ve vzorech („proud mysli" 1×, „kontinuum" pro jiné termy); Lotsawa House „your very being" — rgyud zde není jen mysl | učitel: stream of being | Seinsstrom
 ཐུན་གྱིས	thun gyis	rituální substance	substanc	fixed	NE „thun" — v češtině ani angličtině to není zavedené slovo (rozhodnutí uživatele 2026-07-28); thun gyis brab = „vrženými rituálními substancemi", Lotsawa House „wrathful substances". Klíč je zúžený na instrumentál: samotné ཐུན matchuje i ཐུན་མོང (běžný) a ཐུན་མཐར (konec sezení) — homonymie substance / praxový úsek. Starší „thun-torma" v Pudri Rekpung se nepředělává (neaktuální překlad).
-ལྷུན་གྲུབ	lhun grub	spontánní dovršení	spontán	prov	„spontánně přítomný" 5×, „spontánně dovršen" 1×, „spontánní dokonalost" 1× — vzory kolísají, proto prov. U epitet v oslovení (sku gsum lhun grub …) volit jmennou apozici „spontánní dovršení tří kájí", ne visící přívlastek „spontánně dovršené tři káje" (nominativ bez vazby na vokativ).
-ཡོན་ཏན	yon tan	kvality	kvalit	fixed	„kvalit*" 42× ve vzorech („dokonalé kvality", „pozitivní kvality"), „vlastnost" 1× — zamítnuto; rozhodnutí uživatele 2026-07-28
+ལྷུན་གྲུབ	lhun grub	spontánní dovršení	spontán	prov	„spontánně přítomný" 5×, „spontánně dovršen" 1×, „spontánní dokonalost" 1× — vzory kolísají, proto prov. U epitet v oslovení (sku gsum lhun grub …) volit jmennou apozici „spontánní dovršení tří kájí", ne visící přívlastek „spontánně dovršené tři káje" (nominativ bez vazby na vokativ). | učitel: spontaneous presence | spontane Gegenwart/Präsenz
+ཡོན་ཏན	yon tan	kvality	kvalit	fixed	„kvalit*" 42× ve vzorech („dokonalé kvality", „pozitivní kvality"), „vlastnost" 1× — zamítnuto; rozhodnutí uživatele 2026-07-28 | učitel: quality, qualities | Qualität, Qualitäten
 ཡན་ལག་བརྒྱད་ལྡན	yan lag brgyad ldan	o osmi kvalitách	kvalit	fixed	o vodě; vzory mají obrat doslova: „jezero nektaru obsahující osm kvalit vody", „čistota této vody má osm kvalit"
 སྒོ་གསུམ	sgo gsum	tři brány	bran	fixed	„tří bran" 4× + „tři brány" 3× + „třemi branami" 1×; „vrata" 0× — zamítnuto (rozhodnutí uživatele 2026-07-28); vzory často glosují „(těla, řeči a mysli)"
 རྡོ་རྗེར་གྱུར	rdo rjer gyur	přemění se ve vadžru	vadžr	prov	„vadžrový" jako přísudek 0× ve vzorech (jediné „vadžrových paprsků"); vzory mají „vadžra tělo, vadžra řeč a vadžra mysl" 2× a „stav vadžry" 3×
@@ -131,11 +142,583 @@
 མཁར་ཆེན་བཟའ	mkhar chen bza'	Kharčhenzo	Kharčhenz	prov	1× ve vzorech, vždy s poznámkou „Princezna z Kharčhenu – Ješe Tsogjäl"; „paní z Kharčhenu" 0× — zamítnuto (gloss patří do poznámky, ne do verše)
 མཐར་ཕྱིན	mthar phyin	završen	završ	prov	„završ*" 25× vs „k dokonalosti" 2×; mthar phyin = dovést k završení; sloveso, proto prov
 ཆགས་ཐོགས	chags thogs	lpění i překážky	lpě	prov	dvojice: chags = lpění (5×), thogs = překážky; překlad jen druhého členu („nic nebrání") vypouští nepřipoutanost
-ཟུང་འཇུག	zung 'jug	sjednocení	sjednoc	prov	yuganaddha; „sjednocení" 18× vs „jednoty" 9×, „jednota" 5×; head-final složenina — v zung 'jug sgyu 'phrul ye shes je hlava ye shes, ne zung 'jug
+ཟུང་འཇུག	zung 'jug	sjednocení	sjednoc	prov	yuganaddha; „sjednocení" 18× vs „jednoty" 9×, „jednota" 5×; head-final složenina — v zung 'jug sgyu 'phrul ye shes je hlava ye shes, ne zung 'jug | učitel: union | Einheit
 སྤྲུལ་པའི་སྐུ	sprul pa'i sku	nirmanakája	nirmanakáj	fixed	18× vs „nirmánakáj*" 0× — bez délky; ženského rodu („nejvyšší nirmanakájo Padmasambhavo", „dákiní nirmanakáji", „soucitná ženská nirmanakája")
 བདུད་འཇོམས	bdud 'joms	Düdžom	Düdžom	fixed	„Düdžom" 75× ve vzorech vs „Dudjom" 1× (anglická transkripce), „Dudžom" 0×; platí i v kreditu „Düdžom Rinpočhe". Bibliografická citace v kolofonu zůstává v anglickém tvaru „Dudjom Rinpoche" verbatim
 གཟུངས་མ	gzungs ma	partnerka	partnerk	fixed	„partnerk*" 24× ve vzorech („tajná partnerka", „svrchovaná partnerka", vok. „partnerko"), „družk*" 0× — thugs kyi gzungs ma = srdeční partnerka
 ཕུར་པ	phur pa	Kilája	Kiláj	prov	„Kiláj*" 20× + „Vadžrakiláj*" 8× ve vzorech; „Kílaj*" 0× a „Vadžrakílaj*" 0× — dlouhá je DRUHÁ slabika (ki-LÁ-ja). Zadání prvního běhu i moje prompty měly „Kílaja" špatně; nahlásil to Fable proti instrukci a doložil počtem. Status prov, ne fixed: klíč ཕུར་པ matchuje i název cyklu ཕུར་པ་སྤུ་གྲི་རེག་ཕུང, kde čeština „Kilája" legitimně vynechává („Břitva, jež ničí dotekem"), a `check` pak šuměl na správných titulech
-དམ་ཅན	dam can	ochránci vázaní přísahou	ochránc	fixed	„ochránc*" 63× ve vzorech vs „strážc*" 7× — sjednoceno 2026-07-28; „strážkyně" (4×) zůstává vyhrazeno pro sgo skyong (strážkyně bran)
-བདུད་རྩི	bdud rtsi	amrita	amrit	prov	ve vzorech „amrit*" 7×, „dütsi" 17×, „nektar" 40×. ROZHODNUTÍ UŽIVATELE 2026-07-29: používá se buď dütsi, nebo amrita — obojí je v pořádku, „nektar" se nevynucuje. Status prov právě proto, že se dvě řešení legitimně střídají; recenzent textu 5 chtěl plošně „nektar" s tvrzením „amrita 0×", což byla substringová past (cz dá 7×)
+དམ་ཅན	dam can	ochránci vázaní přísahou	ochránc	fixed	„ochránc*" 63× ve vzorech vs „strážc*" 7× — sjednoceno 2026-07-28; „strážkyně" (4×) zůstává vyhrazeno pro sgo skyong (strážkyně bran) | učitel: oath bound | eidgebunden
+བདུད་རྩི	bdud rtsi	amrita	amrit	prov	ve vzorech „amrit*" 7×, „dütsi" 17×, „nektar" 40×. ROZHODNUTÍ UŽIVATELE 2026-07-29: používá se buď dütsi, nebo amrita — obojí je v pořádku, „nektar" se nevynucuje. Status prov právě proto, že se dvě řešení legitimně střídají; recenzent textu 5 chtěl plošně „nektar" s tvrzením „amrita 0×", což byla substringová past (cz dá 7×) | učitel: nectar | Nektar
 སྨན་རཀ	sman rak	dütsi a rakta	dütsi	fixed	dvojice rituálních substancí: sman = dütsi (rozhodnutí uživatele 2026-07-29), rak = rakta. „amrita" pro sman ZAMÍTNUTA — amrita je bdud rtsi, ne sman; v ohňové oběti Pudri Rekpung seg 17 draft psal „amritu, raktu" a zaměnil tím dva různé termíny
+
+# --- imported 2026-09-03 from the teacher's Tibetan–English–German term list (607 entries, 594 unique, 25 already present → their note was extended).
+# --- Czech targets are proposals: prov until attested in finished texts, open = undecided (not sent to prompts). note = "učitel: EN | DE — comment".
+ཨ་ཐུང	a thung	krátké A	krátk	prov	učitel: short A | kurzes A — Keimsilbe der Caṇḍālī
+ཨ་ཝ་དྷུ་ཏི	a wa dhU tI	avadhútí	avadhútí	prov	učitel: avadhūtī | Avadhūtī — Zentralkanal (Sanskrit-Lehnwort)
+བདག་འཇུག	bdag 'jug	vlastní zplnomocnění	zplnomocněn	prov	učitel: self-empowerment | Selbst-Eintrittsweihe — Eigenermächtigung des Lehrers; alt: sebezplnomocnění (zamítnuto jako neobratné)
+བཀྲ་ཤིས་བུམ་པ	bkra shis bum pa	váza příznivosti	váz	prov	učitel: auspicious vase | glücksverheißende Vase — erste Empfangsvase
+བློ་གཏད	blo gtad	zaměření mysli	zaměř	prov	učitel: mental focus, mental orientation | geistige Ausrichtung; alt: nasměrování mysli
+བརྗོད་བྲལ	brjod bral	mimo veškerá slova	slov	prov	učitel: beyond expression, ineffable | jenseits aller Worte; alt: nevyslovitelný
+བུམ་ལྷ	bum lha	božstvo vázy	božstv	prov	učitel: vase deity | Vasen-Gottheit
+འབྱུང་གཏོར	'byung gtor	torma vypuzení	torm	prov	učitel: expulsion torma | Austreibungs-Torma; alt: vypuzovací torma
+འཆི་མེད	'chi med	nesmrtelný	nesmrt	prov	učitel: deathless | todlos
+འཆི་མེད་འཕགས་མའི་སྙིང་ཐིག	'chi med 'phags ma'i snying thig	Srdečná esence nesmrtelné Vznešené Paní	esenc	prov	učitel: Heart Essence of the Deathless Noble Lady | Herzessenz der Edlen Herrin der Todlosigkeit — Terma-Zyklus von Pema Ösal Do Ngag Lingpa
+དམ་སྲུང	dam srung	ochrana samaji	ochran	prov	učitel: samaya-protection | Samaya-Schutz — Schutz vor Samaya-Bruch
+དམ་ཚིག་སྲོག	dam tshig srog	životní síla samaji	síl	prov	učitel: life-force of samaya | Lebensader des Samaya
+དགའ་བཞིའི་ཡེ་ཤེས	dga' bzhi'i ye shes	moudrost čtyř radostí	moudrost	prov	učitel: wisdom of the four joys | Weisheit der Vier Freuden — tantrische Erkenntnis-Stufen
+དོན་ངོ་སྤྲད	don ngo sprad	ukázat pravý smysl	ukáz	prov	učitel: pointing out the actual meaning | den wahren Sinn offensichtlich machen — absolute Einweisung
+དྲིལ་སྒྲུབ	dril sgrub	sjednocená praxe	sjednoc	prov	učitel: integrated practice | integrierte Praxis — Mantra-Form, die Annäherung und Verwirklichung vereint
+ཛཔ་ཁང	dzapa khang	příbytek mantry	příbyt	prov	učitel: mantra mansion | Mantra-Haus; alt: dům mantry
+གར་གྱི་དབང་ཕྱུག	gar gyi dbang phyug	pán tance	pán	prov	učitel: lord of dance | Herr des Tanzes
+གཅེར་གྲོལ	gcer grol	osvobození v nahotě	osvobo	open	učitel: naked liberation | nackt Befreien; alt: nahé osvobození, osvobození obnažením
+འགོག་བཟླས	'gog bzlas	recitace zastavení	recitac	prov	učitel: stopping recitation | Rezitation des Aufhörens — Rezitation mit angehaltenem Atem; alt: recitace se zadrženým dechem
+གཟུངས་ཐག	gzungs thag	šňůra dháraní	šňůr	prov	učitel: dhāraṇī cord | Dhāraṇī-Schnur
+འཇའ་ལུས་འཕོ་བ་ཆེན་པོ	'ja' lus 'pho ba chen po	velký přenos duhového těla	přenos	prov	učitel: great transition rainbow body | GroßerÜbertragung des Regenbogenkörpers — höchste Dzogchen-Vollendung
+ཁ་རྒྱན	kha rgyan	vrchní ozdoba	ozdob	prov	učitel: top ornament (of vase) | Aufsatzschmuck — oberer Schmuck der Vase
+ཁེ་ཉེན	khe nyen	prospěch a nebezpečí	prospěch	prov	učitel: benefit and danger | Vorteil und Gefahr; Wagnis — Charakterisierung des Vajra-Pfades; alt: riziko; alt (dup row): riziko
+འཁོར་ལོ་ཚོགས་ཆེན	'khor lo tshogs chen	Velké kolo shromáždění [slabik]	kol	prov	učitel: great cakra gathering [the syllables] | Großes Rad der Versammlung [der Silben] — Bhūmi-Name nach Weisheits-Ermächtigung
+ཁྲིད་ཡིག	khrid yig	text pokynů	text	prov	učitel: instruction text | Unterweisungstext — Gattungsbezeichnung
+ཀུན་ཏུ་འོད	kun tu 'od	Všeobsáhlé světlo	světl	prov	učitel: universal light (bhūmi) | Alles Licht (Samantaprabhā) — 13. Bhūmi; alt: Samantaprabhá
+ལས་བུམ	las bum	váza aktivity	váz	prov	učitel: activity vase | Aktivitäts-Vase
+ལྡིང་གུར	lding gur	zavěšený baldachýn	baldachýn	prov	učitel: hanging canopy | darüber gehängter Baldachindach — Schutzbaldachin über dem Maṇḍala
+ལྷར་བསྐྱེད	lhar bskyed	vytvořit jako božstvo	vytvoř	prov	učitel: generate as deity | als Gottheit erzeugen — Erzeugungsstufe; alt: vytváření v podobě božstva
+ལྷུན་གྲུབ་རིག་འཛིན	lhun grub rig 'dzin	vidjadhára spontánní přítomnosti	vidjadhár	prov	učitel: vidyādhara of spontaneous presence | Gewahrseinshalter der spontanen Gegenwart — vierte Vidyādhara-Stufe
+ལོ་རྒྱུས	lo rgyus	historie linie	histori	prov	učitel: history (of the lineage) | Liniengeschichte — Linien-Erzählung
+ལུས་དཀྱིལ	lus dkyil	mandala těla	mandal	prov	učitel: body maṇḍala | Körper-Maṇḍala — Sarma-Bezeichnung für Anuyoga-Praxis
+མགུལ་ཆིངས	mgul chings	stuha na hrdle	stuh	prov	učitel: neck-binding (of vase) | Halsbinde — Schmuckband am Vasenhals
+མངའ་གསོལ	mnga' gsol	nastolení	nastol	prov	učitel: enthronement | Inthronisierung, Enthronung; alt (dup row): nastolit
+མཉམ་པར་བཞག	mnyam par bzhag	setrvávat v rovnováze	setrvá	prov	učitel: to rest in equipoise | ausgeglichen verweilen — meditatives Gleichmaß; alt: dlít v rovnovážném stavu
+མཐའ་བྲལ	mtha' bral	bez extrémů	extrém	prov	učitel: free from extremes | frei von Extremen — Madhyamaka-/Dzogchen-Charakteristik
+ནུས་ལྡན	nus ldan	Mocný	mocn	prov	učitel: the powerful one | der Wirkkräftige — Beiwort der zu verwirklichenden Gottheit
+ཉམས་ཞེན	nyams zhen	lpění na zkušenosti	lpě	prov	učitel: clinging to experience | Festhalten an Erfahrungen
+འོག་འགྱུ	'og 'gyu	následný pohyb	pohyb	prov	učitel: subsequent movement, aftermovement | Nachbewegung
+འོག་སྒོ	'og sgo	dolní brána	bran	prov	učitel: lower gate | unteres Tor — Perineum/Anus-Verschluss
+པདྨ་ཅན	pad+ma can	Nositelka lotosu	nositel	prov	učitel: Lotus-bearer (bhūmi) | Lotus-Träger (Padmavatī); alt: Padmávatí
+ཕྱག་རྫོགས་ཟུང་འཇུག	phyag rdzogs zung 'jug	sjednocení mahámudry a dzogčhenu	sjednoc	prov	učitel: union of Mahāmudrā and Dzogchen | Einheit von Mahāmudrā und Großer Vollkommenheit — Philosophische Schlussfolgerung des Textes
+ཕྱག་རྒྱ་ཆེན་པོའི་རིག་འཛིན	phyag rgya chen po'i rig 'dzin	vidjadhára mahámudry	vidjadhár	prov	učitel: vidyādhara of Mahāmudrā | Gewahrseinshalter der Mahāmudrā — dritte Vidyādhara-Stufe
+ཕྱག་རྒྱ་གཅིག་པ	phyag rgya gcig pa	jediná mudra	mudr	prov	učitel: single mudrā | Einzel-Mudrā — Bezeichnung für die verdichtete Praxisform
+རང་གྲོལ	rang grol	sebeosvobození	sebeosvobo	prov	učitel: self-liberation | selbst Befreien
+རིག་ངོ	rig ngo	tvář rigpy	tvář	prov	učitel: face of awareness | Gewahrseinsantlitz; alt: tvář vědomí
+རིག་ཙཀ	rig tsak	tsakli družky poznání	tsakli	open	učitel: awareness consort tsakli | Tsakli der Gewahrseinsdame
+རྗེས་སུ་བཟུང་བ	rjes su bzung ba	přijmout do své péče	péč	prov	učitel: to take into care, embrace | sich annehmen
+རྗེས་ཟློས	rjes zlos	opakovat po mistrovi	opakov	prov	učitel: to repeat after | nachsprechen
+རྐྱང་མ	rkyang ma	lalaná	lalan	prov	učitel: lalanā | Lalanā — Linker Seitenkanal
+རླུང་ཁུག	rlung khug	zadržení větru	zadrž	prov	učitel: wind retention | Windanhaltung — Dauer des Anhaltens
+རྣམ་པར་རྒྱལ་མ	rnam par rgyal ma	Vidžajá	vidžaj	prov	učitel: Vijayā, Uṣṇīṣavijayā | Vijayā, Uṣṇīṣavijayā — Erscheint als Emanation bei der Mantra-Rezitation; alt: Ušníšavidžajá
+རྣམ་སྨིན་རིག་འཛིན	rnam smin rig 'dzin	vidjadhára úplného zrání	vidjadhár	prov	učitel: vidyādhara of complete maturation | Völlig Gereifter Gewahrseinshalter — erste der vier Vidyādhara-Stufen
+རོ་མ	ro ma	rasaná	rasan	prov	učitel: rasanā | Rasanā — Rechter Seitenkanal
+རྩ་འདབ	rtsa 'dab	plátek kanálu	plát	prov	učitel: channel petal | Kanalblatt — Nebenverzweigungen der Chakras
+རྩ་ཁམས	rtsa khams	prvky kanálů	prvk	prov	učitel: channel elements | Kanalelemente — Subtilkörper-Komponenten
+ས་ནོན	sa non	dosažení stupně	dosaž	prov	učitel: level/ground attainment | Stufe erreichen / Stufe meistern — Bhūmi-Erlangung; alt: zvládnutí stupně
+སྒོ་འབྱེད	sgo 'byed	otevření brány	otevř	prov	učitel: gate-opening | Toröffnung
+ཤར་གྲོལ	shar grol	osvobození ve vyvstání	osvobo	prov	učitel: arising-liberation | erhebend Befreien
+ཤུན་པ	shun pa	skořápka	skořáp	prov	učitel: shell, husk | Schale, Hülle; alt: obal; alt (dup row): obal
+སིན་དྷུ	sin d+hu	sindúra	sindúr	prov	učitel: sindūra (red vermillion paste) | Sindūra (rotes Zinnoberpulver) — rituelle Farbpaste
+སྐལ་ལྡན	skal ldan	obdařený štěstím	obdař	prov	učitel: endowed with [good] fortune | Glücklicher — Beiwort des qualifizierten Schülers; alt: šťastlivec
+སྐལ་པ་མཆོག་ལྡན	skal pa mchog ldan	obdařený nejvyšším štěstím	obdař	prov	učitel: endowed with supreme fortune | höchst Glücksveranlagung — gesteigerte Form von skal ldan
+སྨིན་བྱེད	smin byed	zrání	zrán	prov	učitel: ripening, maturation | Reifung; alt: dozrávání
+སྔོན་གཏོར	sngon gtor	přípravná torma	přípravn	prov	učitel: preliminary torma | Vorbereitungs-Torma
+སྙན་རྒྱུད	snyan rgyud	šeptaná linie	šeptan	prov	učitel: whispered lineage | gehörte Linie — Mündliche Geheimlinie
+ཐར་པ་ཆེན་པོའི་གཞལ་མེད་ཁང	thar pa chen po'i gzhal med khang	velký palác osvobození	palác	prov	učitel: great palace of liberation | Palast der Vollständigen Befreiung — Bezeichnung des Maṇḍala-Palastes
+ཚེ་འབྲང་རྒྱས	tshe 'brang rgyas	amulet dlouhého života	amulet	prov	učitel: longevity amulet | Langlebens-Amulett
+ཚེ་བུམ	tshe bum	váza dlouhého života	váz	prov	učitel: longevity vase | Langlebens-Vase
+ཚེ་ལ་དབང་བའི་རིག་འཛིན	tshe la dbang ba'i rig 'dzin	vidjadhára s vládou nad životem	vidjadhár	prov	učitel: vidyādhara of life-mastery | Gewahrseinshalter mit Macht über die Lebensdauer — zweite Vidyādhara-Stufe
+ཚེ་རིལ	tshe ril	pilulky dlouhého života	pilulk	prov	učitel: longevity pills | Langlebens-Pillen; alt: kuličky dlouhého života
+ཡབ་ཡུམ་སྦྱོར་བ	yab yum sbyor ba	sjednocení otce a matky (jab-jum)	sjednoc	prov	učitel: yab-yum union | Vereinigung von Vater und Mutter (Yab-Yum) — tantrische Vereinigung
+ཡན་ལག་བདུན་པ	yan lag bdun pa	sedm větví	větv	prov	učitel: seven branches | Sieben Zweige — klassische sieben Anbetungsglieder; alt: sedmičlenná praxe
+ཡེ་ཤེས་དབབ	ye shes dbab	sestoupení moudrosti	sestoup	prov	učitel: descent of wisdom | Herabbringen der Weisheit — Wesentliches Element der Ermächtigung
+ཡིད་བཟླས	yid bzlas	recitace v mysli	recitac	prov	učitel: mental recitation | Stille Rezitation — Rezitation nur im Geist; alt: tichá recitace
+ཟིལ་དངར	zil dngar	zářivý lesk	lesk	prov	učitel: radiant splendor | strahlender Glanz — Teil des Texttitels; alt: sálající nádhera
+བག་ཆགས	bag chags	návykové tendence	návyk	prov	učitel: vāsanā, habitual tendencies, latent imprints | Gewohnheitsprägungen — daraus entstehen dann die Gewohnheitstendenzen; alt: vásaná, latentní vtisky
+བན་བོན	ban bon	následovníci falešných cest	následovn	prov	učitel: followers of false paths | Anhänger falscher Wege
+བར་ཆད	bar chad	přerušující překážka	přerušuj	prov	učitel: interrupting obstacle | Unterbrechungshindernis — interrupting obstacle
+བར་དོ	bar do	bardo	bardo	prov	učitel: bardo, intermediate | Bardo, Zwischenzustand; alt: mezistav
+བར་སྣང	bar snang	vzdušný prostor	vzdušn	prov	učitel: atmosphere, air space | Luftraum — einer der drei Räume – Himmelsraum, Luftraum, Erdboden
+བཅོལ་བ	bcol ba	svěřit	svěř	prov	učitel: to entrust | überantworten
+བཅོམ་ལྡན་འདས	bcom ldan 'das	Bhagaván	bhagaván	prov	učitel: Bhagavat | Bhagavat; alt: Vznešený
+བཅོས་བསླད	bcos bslad	zkažený výmysly	zkaž	prov	učitel: corrupted by fabrications | verdorben durch Erfindungen — auch bcos slad
+བཅུད	bcud	elixír	elixír	prov	učitel: essence, elixir | Elixier; alt: esence
+བཅུད་ལེན	bcud len	získávání esence	získáv	prov	učitel: essence extraction | Essenzextraktion
+བདག	bdag	já	já	prov	učitel: self | Selbst; alt: vlastní já
+བདག་བསྐྱེད	bdag bskyed	vytváření sebe jako božstva	vytvář	prov	učitel: self creation | Selbstentstehung
+བདེ་བ	bde ba	blaženost	blažen	prov	učitel: sukha, bliss | Glückseligkeit; alt: blaho
+བདེ་གཤེགས་སྙིང་པོ	bde gshegs snying po	esence sugaty	esenc	prov	učitel: sugatagarbha, sugata essence | Sugata-Natur; alt: sugatagarbha
+བདེན་པའི་སྟོབས	bden pa'i stobs	síla pravdy	síl	prov	učitel: power of truth | Kraft der Wahrheit
+བདུད་འདུལ	bdud 'dul	krotitel Máry	krotitel	prov	učitel: māra-tamer, taming Māra | Mara-Teufel zähmen; alt: zkrotit Máru
+བེམ་སྟོང	bem stong	nečinná prázdnota	nečinn	prov	učitel: inert void | untätiges Nichts, inert void
+བཀའ་གཏེར་རྒྱུད	bka' gter rgyud	linie ústní kamy a skryté termy	lini	prov	učitel: oral kama and treasure terma lineages | die mündlichen Kama- und der versteckten Terma-Linien
+བཀལ་མེད	bkal med	oheň konce věku	konce věku	open	učitel: eon-fire | Zeitalterfeuer — das Feuer am Ende des Zeitalters
+བཀྲ་ཤིས	bkra shis	příznivost	příznivost	prov	učitel: auspiciousness, good fortune | Glücksbitte
+བཀྲ་ཤིས་ཤོག	bkra shis shog	kéž je přítomna příznivost	příznivost	prov	učitel: may the auspiciousness be present! | möge das Glück von … gegenwärtig sein!
+བླ་ཚེ	bla tshe	duše la a dlouhý život	duš	prov	učitel: la-soul and longevity | La-Seele und Langlebigkeit
+བློ	blo	rozum	rozum	prov	učitel: intellect | Verstand; alt: intelekt
+བློ་བདེ	blo bde	klidná uvolněnost	uvolněn	prov	učitel: serene ease | heitere Gelassenheit
+བློ་འདས	blo 'das	mimo rozum	rozum	prov	učitel: beyond intellect | Verstandesjenseitigkeit
+བློ་གྲོས	blo gros	rozumové myšlení	myšlen	prov	učitel: intellectual thinking | Verstandesdenken
+བློ་རྡེག	blo rdeg	roztříštění rozumu	roztříšt	prov	učitel: mind-striking, intellect-shattering | den Intellekt zerschmetternd — bezogen auf PHAT
+བློས་བྱས	blos byas	vytvořený rozumem	vytvoř	prov	učitel: made by intellect, intellectualized | mit dem Verstand gemacht, intellektualisierend
+བོགས་འདོན	bogs 'don	prohloubení	prohlouben	prov	učitel: enhancement | Vertiefung — eine Meditationsstufe abschließen, und in die nächsthöhere gehen
+བརྡ་ཐིམ	brda thim	symbol se rozplývá	symbol	prov	učitel: the symbol dissolves | Das Symbol löst sich auf. — Ende eines Terma-Textes
+བརྟུལ་ཞུགས	brtul zhugs	jogínské chování	chován	prov	učitel: yogic conduct | yogische Handlungsweise
+བསམ་གཏན	bsam gtan	dhjána	dhján	prov	učitel: dhyāna, meditative concentration | (meditative) Konzentration — dhyana; alt: meditativní soustředění
+བསམ་མི་ཁྱབ	bsam mi khyab	nepředstavitelný	nepředstavitel	prov	učitel: unthinkable | unvorstellbar, mit Denken nicht zu umspannen
+བསང	bsang	očista kouřem	očist	prov	učitel: smoke purification | Rauchreinigung, rauchgereinigt
+བསང་སྦྱང	bsang sbyang	očistit a pročistit	očist	prov	učitel: to cleanse and purify | reinigen und läutern
+བསྒོམ	bsgom	meditovat	medit	prov	učitel: to meditate | meditieren
+བཤགས་པ	bshags pa	vyznání	vyzná	prov	učitel: confession, to confess | Bekenntnis, bekennen; alt: vyznat
+བསྐལ་པ	bskal pa	věk	věk	prov	učitel: eon | Weltzeitalter; alt: kalpa
+བསྐང་བ	bskang ba	naplnění	naplně	prov	učitel: fulfillment, mending ritual | Erfüllung; alt: rituál napravení
+བསྐང་གསོ	bskang gso	naplnění a obnova	naplně	prov	učitel: fulfillment and mending | Erfüllung und Wiederherstellung
+བསྐྱང་བ	bskyang ba	chránit	chrán	prov	učitel: to protect | bewahren
+བསླུ་མེད	bslu med	neomylný	neomyl	prov	učitel: unfailing | untrüglich; alt: nezklamávající
+བསྙེན་སྒྲུབ	bsnyen sgrub	přístup a uskutečnění	přístup	prov	učitel: approach and accomplishment | Annäherung und Verwirklichung
+བསོད་སྙོམས	bsod snyoms	obcházení pro almužnu	almužn	prov	učitel: alms round | Almosengang
+བསྲུང་འཁོར་གྱི་མེ་རི	bsrung ’khor gyi me ri	ohnivé hory ochranného kruhu	hor	prov	učitel: fire mountains of the protection circle | Feuerberge des Schutzkreises
+བཏགས་པ	btags pa	přisuzování	přisuz	prov	učitel: imputation, designation | Zuschreibung; alt: označení
+བཙའ་ཐན	btsa' than	sucho	such	prov	učitel: drought | Dürre
+བཙན་ས	btsan sa	trůn	trůn	prov	učitel: throne | Thron
+བུམ་ཅན	bum can	vázové dýchání	dýchán	prov	učitel: vase breathing | Vasenatmung
+བུམ་པ་ཅན	bum pa can	vázové dýchání	dýchán	prov	učitel: vase breathing | Vasenatmung
+བྱ་དྲུབ་ཡེ་ཤེས	bya drub ye shes	vše uskutečňující moudrost	uskutečňuj	prov	učitel: all-accomplishing wisdom | alles verwirklichende Weisheit
+བྱད་བྱོར	byad byor	kletba	kletb	prov	učitel: curse, sorcery | Fluch, Verwünschung; alt: čarodějnictví
+བྱད་མ་རྦོད་གཏོང	byad ma rbod gtong	zaklínači a podněcovatelé	zaklín	prov	učitel: cursers and instigators | Verflucher und Aufhetzer
+བྱིན་འབེབས	byin 'bebs	sestoupení požehnání	sestoup	prov	učitel: bringing down blessings | das Herabkommenlassen des Segens — die Gottheiten lassen herabkommen, nicht der Praktizierende!!!
+བྱིང	bying	otupělost	otupěl	prov	učitel: dullness | Dumpfheit
+བཟློག	bzlog	zpět!	zpět	prov	učitel: back! | zurück!
+བཟློག་པ	bzlog pa	odvrátit	odvrá	prov	učitel: to avert, repel | zurückwerfen, Abwehr; alt: odražení
+ཆ་བཅུ	cha bcu	desetinásobný	desetinásob	prov	učitel: tenfold, ten-part | zehnfach; alt: desetidílný
+ཆ་ལུགས	cha lugs	výstroj	výstroj	prov	učitel: equipment, accoutrements | Ausstattung; alt: úbor
+ཆད་ཆོད་ཡད་ཡུད	chad chod yad yud	odťatý a prchavý	odťat	prov	učitel: cut off and passing | abgetrennt und vorübergehend — Beschreibung des Umgangs mit Gedankenketten in rjes thob
+ཆགས	chags	lpění	lpě	prov	učitel: desire | Begierde; alt: žádostivost (glosář má chags = lpění v chags thogs)
+འཆར་བ	'char ba	vyvstávat	vyvst	prov	učitel: to arise | sich erheben
+ཆས	chas	náčiní	náčin	open	učitel: requisites, attire | Requisiten — Ausrüstung, Kleider; alt: výstroj, oděv
+ཆོས	chos	dharma	dharm	prov	učitel: Dharma | Dharma
+ཆོས་འབྱུང	chos 'byung	zdroj dharmy	zdroj	prov	učitel: source of Dharma | Dharma-Quelle
+ཆོས་ཅན	chos can	podmíněný jev	podmíněn	prov	učitel: conditioned dharma phenomenon | bedingte Dharmas
+ཆོས་དབྱིངས	chos dbyings	dharmadhátu	dharmadhát	prov	učitel: dharmadhātu, basic space of Dharma | Dharma-Grundraum; alt: základní prostor dharmy
+ཆོས་དབྱིངས་ཡེ་ཤེས	chos dbyings ye shes	moudrost dharmadhátu	moudrost	prov	učitel: dharmadhātu wisdom | Weisheit des Dharma-Grundraums
+ཆོས་ཉིད	chos nyid	dharmata	dharmat	prov	učitel: dharmatā, Dharma suchness | Dharma-Soheit
+ཆོས་ཉིད་du 'dzin pa་ཟད་པ	chos nyid [du 'dzin pa] zad pa	vyčerpání [uchopování] v dharmatě	vyčerpán	prov	učitel: exhaustion [of grasping] into dharmatā | Erschöpfen [des Ergreifens] in der Dharma-Natur
+ཆོས་ཉིད་མངོན་སུམ	chos nyid mngon sum	přímé vnímání dharmaty	vnímán	prov	učitel: direct perception of dharmatā | die Offensichtlichkeit der Dharma-Natur — Thögäl
+ཆོས་ཉིད་ནམ་མཁའི་ཀློང་མཛོད་ལས	chos nyid nam mkha'i klong mdzod las	Z pokladnice prostoru nebes dharmaty	pokladnic	prov	učitel: From the Treasurehouse of the Expanse of the Dharmatā | Aus dem Schatzhaus der Himmelweite der Dharmatā — Terma Titel
+ཆུ་ཤེལ	chu shel	křišťál	křišťál	prov	učitel: crystal | Bergkristall; alt: horský křišťál
+ཅོག་བཞག	cog bzhag	pouhé spočívání	spočív	prov	učitel: bare resting | bloßes Ruhen; alt: holé spočinutí
+དད་པ	dad pa	víra	vír	prov	učitel: faith, trust | Vertrauen; alt: důvěra
+དག་མཉམ	dag mnyam	čistota a rovnost	čistot	prov	učitel: equal purity, purity and equality | ausgeglichen rein, Reinheit und Ausgeglichenheit; alt: rovnostná čistota
+དག་སྣང་ཡེ་ཤེས་དྲྭ་བ་ལས	dag snang ye shes drwa ba las	Ze sítě moudrosti čistých jevů	sít	prov	učitel: From the Wisdom Net of Pure Apperances | Aus dem Weisheitsnetz reiner Erscheinung — Terma Titel
+དལ་འབྱོར	dal 'byor	svobody a obdaření	svobod	prov	učitel: freedoms and endowments | Freiheiten und Ausstattungen; alt: volnosti a obdaření
+དམ་པའི་ཆོས	dam pa'i chos	svatá Dharma	dharm	prov	učitel: the holly Dharma | der Heilige Dharma; alt: vznešená Dharma
+དམ་ཚིག་པ	dam tshig pa	bytosti samají	samaj	prov	učitel: samaya being | Samaya-Wesen — Plural!!!
+དམ་ཚིག་སྒྲོལ་མ	dam tshig sgrol ma	Samajatára	Samajatár	prov	učitel: Samayatārā | Samayatārā
+དབང་བསྡུས་ཟིལ་གནོན	dbang bsdus zil gnon	podmanění a pokoření nádherou	podman	prov	učitel: bringing under control and subduing with splendor | Unter Macht Bringen und Unterwerfen mit Glanz
+དབང་སྐུར་བ	dbang skur ba	udělit zplnomocnění	uděl	prov	učitel: to grant empowerment | die Ermächtigung gewähren — immer diese Formurlierung nehmen!
+དབང་ཐང	dbang thang	činorodost	činorod	open	učitel: diligence, vigor | Tatkraft; alt: životní síla, průbojnost
+དབུགས་འབྱིན	dbugs 'byin	vydechnout úlevou	vydech	prov	učitel: drawing the breath of relief | den Atem der Erleichterung schöpfen; alt: dodat úlevu
+དབུར་རྒྱན	dbur rgyan	ozdoba na temeni	ozdob	prov	učitel: crown ornament | Scheitelschmuck
+དབྱིངས	dbyings	základní prostor	prostor	prov	učitel: basic space | Grundraum
+དེ་གཤེགས་སྙིང་པོ	de gshegs snying po	buddhovská přirozenost	přirozenost	prov	učitel: tathāgatagarbha, buddha nature | Buddha-Natur; alt: tathágatagarbha
+དགའ་བ	dga' ba	radost	radost	prov	učitel: joy | Freude
+དགའ་སྟོན	dga' ston	hostina	hostin	prov	učitel: feast, banquet | Festmahl; alt: slavnostní hostina
+དགེ་བ	dge ba	ctnostný	ctnostn	prov	učitel: virtuous | heilsam, das Heilsame; alt: prospěšný, dobré
+དགེའོ	dge'o	Ctnost!	ctnost	prov	učitel: Virtue! | Heilsam!
+དགོངས	dgongs	osvícený záměr	záměr	prov	učitel: intention, enlightened intent | Geistabsicht
+དགོས་པ	dgos pa	nezbytný	nezbytn	prov	učitel: necessery | unerlässlich
+དགུ་གཏོར	dgu gtor	rituál devíti torem	rituál	prov	učitel: nine-torma ritual | der Neunfach-Torma
+དཀར་འཇམ་རྟའི་སྒྲོན་མ	dkar 'jam rta'i sgron ma	lampa jemného bílého kanálu	lamp	prov	učitel: lamp of the soft white channel | Lampe des weichen, weißen Kanals
+དམིགས་པ	dmigs pa	vizualizace	vizualizac	prov	učitel: visualization, to visualize | Visualisation, visualisieren; alt: vizualizovat
+དངོས་སྒྲུབ	dngos sgrub	uskutečnění	uskuteč	prov	učitel: accomplishment | Verwirklichung; alt: dosažení
+དོ་ཤལ	do shal	středně dlouhý náhrdelník	náhrdelník	prov	učitel: middle lenght necklace | mittellange Halskette
+དོར་སྟབས	dor stabs	postoj v kroku	postoj	prov	učitel: striding stance | Schreitstellung; alt: kročný postoj
+དཔའ་བོ	dpa' bo	hrdina	hrdin	prov	učitel: vīra, hero | Held — Vira; alt: vira
+དཔལ	dpal	sláva	sláv	prov	učitel: splendor, glory | Pracht, Glorie; alt: nádhera
+དཔལ་དང་ལྡན་པའི་ཞིང	dpal dang ldan pa'i zhing	říše naplněná slávou	říš	prov	učitel: Śrīmat, realm filled with glory | Land erfüllt mit Herrlichkeit — Śrīmat; alt: Šrímat
+དཔེའི་ཡེ་ཤེས	dpe'i ye shes	moudrost příkladu	moudrost	prov	učitel: example wisdom | Beispielsweisheit
+དྲན་པ	dran pa	pamatovat si	pamat	prov	učitel: smṛti, to remember, to be mindful | erinnern, vergegenwärtigen, gegenwärtig halten; alt: všímavost, mít na mysli
+དྲན་རིག	dran rig	bdělé uvědomění	uvědom	prov	učitel: mindful awareness | Wachheitsgegenwart
+དྲན་ཤེས	dran shes	bdělá všímavost	všímavost	prov	učitel: alert mindfulness | wacher Achtsamkeit
+དྲེགས་པའི་སྡེ་བརྒྱད	dregs pa'i sde brgyad	osm tříd pyšných	tříd	prov	učitel: eight classes of the arrogant | die acht Klassen der Hochmütigen
+དྲི་མེད	dri med	neposkvrněný	neposkvrn	prov	učitel: stainless | makellos; alt: bez poskvrny
+དུ་བྱེད	du byed	duševní formace	formac	prov	učitel: saṃskāra, mental formations | Geistesfaktoren; alt: sanskára, utvářející činitelé
+དུ་ཤེས	du shes	vnímání	vnímán	prov	učitel: saṃjñā, perception | Wahrnehmung — erste feine Konzeptualisierung der Welt
+དུ་ཤེས་གསུམ	du shes gsum	tři vnímání	vnímán	prov	učitel: the three perceptions | die drei Wahrnehmungen — in der Vereinigungspraxis
+དུལ་བ	dul ba	zkrotit	zkrot	prov	učitel: to tame | zähmen
+དུས་ཆེན	dus chen	velký svátek	svát	prov	učitel: great festival day | großer Buddha-Festtag; alt (dup row): velký buddhovský svátek
+དུས་གསུམ	dus gsum	tři časy	čas	prov	učitel: three times | drei Zeiten
+དབ༹ངས་སྙིགས	dvangs snyigs	čistá esence a kal	esenc	prov	učitel: pure essence and dregs | reine Essenz und Bodensatz; alt: čistá esence a usazenina
+དྭངས་མ	dwangs ma	čistá esence	esenc	prov	učitel: pure essence | reine Essenz
+ཨེ་མ་ཧོ	e ma ho	e ma ho	e ma ho	prov	učitel: How wonderous! | Wie wundersam! — Shangshung Wort tib. ngo mtshar; alt: Jak podivuhodné!
+གཡང་བཞི	g.yang bzhi	kůže	kůž	prov	učitel: skin | Haut; alt: zvířecí kůže
+གཡེལ་བ	g.yel ba	odbíhat	odbíh	prov	učitel: to wander off | abschweifen; alt: rozptýlit se
+གཡུ་ལོ་བཀོད་པའི་ཞིང་ཁམས	g.yu lo bkod pa'i zhing khams	čistá země Uspořádaná z tyrkysových lístků	zem	open	učitel: pure land Arrayed in Turquoise Petals | Budhha-Bereich der Aufgereihten Türkis-Blütenblätter — Reines Land von Tara
+གཅིག་པུ	gcig pu	jedinost	jedinost	prov	učitel: oneness, single | Einsheit; alt: jediný
+གདངས	gdangs	projev	projev	prov	učitel: expression, character | Ausdruck, Beschaffenheit; alt: povaha
+གདེང	gdeng	hluboká důvěra	důvěr	prov	učitel: deep confidence | tiefes Vertrauen — auch gding
+གདིང་བཞི	gding bzhi	čtyři jistoty	jist	prov	učitel: four confidences | vier Gewissheiten
+གདོད་མ	gdod ma	prapočátek	prapočát	prov	učitel: primordially beginning | Uranfang; alt: prapůvodní
+གདོན	gdon	démon	démon	prov	učitel: demon, spirit harm | Dämon; alt: škoda způsobená duchy
+གདུལ་བྱ	gdul bya	žák	žák	prov	učitel: disciple | Schüler, den zu Zähmenden; alt: ten, kdo má být zkrocen
+གདུལ་ཁྱིམས	gdul khyims	sliby vinaji	slib	prov	učitel: Vinaya precepts | Vinaya-Gelübde
+གིང	ging	ging	ging	prov	učitel: kiṃkara | Kiṃkara; alt: kinkara
+གློ་བུར	glo bur	nahodilý	nahodil	prov	učitel: adventitious, fleeting | flüchtig hinzukommend, adventitious; alt: prchavý
+གནད	gnad	klíčový bod	bod	prov	učitel: crucial point, key point | Schlüsselpunkt
+གནམ་ལྕགས	gnam lcags	meteorické železo	želez	prov	učitel: meteoric iron | Meteoreisen
+གནས་བདག	gnas bdag	pán místa	pán	prov	učitel: local deity | Ortsherr
+གནས་ལུགས	gnas lugs	přirozený stav	stav	prov	učitel: abiding nature, natural state | Grundzustand; alt: základní stav
+གནོད་བྱེད	gnod byed	škodící	škod	prov	učitel: injuring | übeltuend, verletzend; alt: škůdce
+གཉུག་མ	gnyug ma	prvotní	prvotn	prov	učitel: original, primordial | ursprünglich; alt: původní
+གོ་འཕང	go 'phang	úroveň	úrov	prov	učitel: level | Stufe; alt: stupeň
+གོད་ཁ	god kha	neštěstí	neštěstí	prov	učitel: misfortune, accident | Unglück; alt: nehoda
+གོལ་ས	gol sa	scestí	scest	prov	učitel: sidetrack | Irrweg; alt: odbočení
+གོམས་པ	goms pa	obeznámit se	obeznám	prov	učitel: to habituate to, to familiarize with, to accustom to | vertrautwerden; alt: zvyknout si
+གོརཏ་མ	gort ma	torma	torm	prov	učitel: torma | der Torma
+གོས་དཀར་མོ	gos dkar mo	Pándaravásiní	Pándaravásin	prov	učitel: Pāṇḍaravāsinī | Pāṇḍaravāsinī
+གྲི་གུག	gri gug	zahnutý nůž	zahnut	prov	učitel: hooked knife | Hakenmesser; alt: gri gug
+གསལ	gsal	jasný	jasn	prov	učitel: clear | klar
+གསང་སྒྲུབ	gsang sgrub	tajná praxe	prax	prov	učitel: secret practice | geheime Praxis — Kagyü Terminologie, geheime Yidam-Praxis
+གསེར་གླིང	gser gling	zlatý ostrov	ostrov	prov	učitel: gold island | Goldinsel — Gleichnis: Ort, wo keine gewöhnl. Steine zu finden sind
+གསེར་སྐྱེམས	gser skyems	zlatý nápoj	nápoj	prov	učitel: Golden Libation | Goldener Trank; alt: zlatá úlitba
+གཤིས	gshis	základní povaha	povah	prov	učitel: fundamental nature | grundlegende Natur — gleichbedeutend mit ngo bo
+གསོལ་མཆོད	gsol mchod	prosebná obětina	obětin	prov	učitel: supplication offering | Bittopferung
+གསུང	gsung	řeč	řeč	prov	učitel: vāk, buddha speech | (Buddha-)Rede; alt: řeč buddhů
+གཏད་ཁྲམ	gtad khram	prokletí	proklet	prov	učitel: hex, magical attack | Verhexung; alt: magický útok
+གཏན་ལ་དབབ་པ	gtan la dbab pa	dospět k definitivnímu pochopení	dosp	prov	učitel: to arrive at a definitive understanding | zu einem wirklichen Verständnis gelangen
+གཏི་མུག	gti mug	tupost	tupost	prov	učitel: moha, dull stupidity | blöde Dumpfheit; alt: zaslepenost, moha
+གཙིགས་པ	gtsigs pa	cenit tesáky	cen	prov	učitel: to bare fangs | (die Fangzähne) blecken
+གཏུམ་མོ	gtum mo	tummo	tummo	prov	učitel: caṇḍālī, fierce heat | Caṇḍālī; alt: čandálí, vnitřní žár
+གུང་ཚིགས	gung tshigs	polední přestávka	přestáv	prov	učitel: noon break, midday session break | Mittagspause
+གུས་པ	gus pa	úcta	úct	prov	učitel: respect | Respekt
+གབ༹འུ	gva'u	amuletová schránka	schrán	prov	učitel: amulet container | Amulettkugel — als Gefäß aus Sonne und Mond im Herzen der Gottheit
+གཞན་དབང	gzhan dbang	závislá přirozenost	přirozenost	prov	učitel: paratantra, dependent nature | abhängige Natur
+གཞི	gzhi	základ	základ	prov	učitel: ground, basis of being | Seinsgrund, Grund(lage); alt: základ bytí
+གཞི་བདག	gzhi bdag	místní božstvo	božstv	prov	učitel: local deity | Ortsgottheit
+གཞི་དང་སྙིང་པོ་མེ་ཏོག་གིས་བརྒྱན་པ	gzhi dang snying po me tog gis brgyan pa	Kusumatalagarbhavjúhálankára	Kusumatal	open	učitel: Kusumatalagarbhavyuhalankara | Kusumatalagarbhavyuhalankara — nirmanakaya realm of buddha Vairocana
+གཞིའི་ཆོས་སྐུ	gzhi'i chos sku	dharmakája základu	dharmakáj	prov	učitel: ground dharmakaya | Seinsgrund-Dharmakaya
+གཞིར་བཞེངས	gzhir bzhengs	ustavený v základu	ustaven	prov	učitel: established in the ground | im Grund gestaltet
+གཞུང	gzhung	kořenový text	text	prov	učitel: root text | Wurzeltext
+གཟུང་འཛིན	gzung 'dzin	uchopující a uchopované	uchop	prov	učitel: grasper and grasped, subject and object | das greifende Subjekt und das ergriffene Objekt; alt: subjekt a objekt
+ཧ་རེ་བ	ha re ba	hledět do prostoru	hled	prov	učitel: gazing into space | Schauen in den Raum
+ཧད་དེ་བ	had de ba	překvapený úžas	úžas	prov	učitel: surprised astonishment | überraschtes Erstaunen
+ཧོṃ་ཟོར	hoṃ zor	hom zor	hom zor	prov	učitel: magical weapon | magische Waffe; alt: magická zbraň
+འཇོག་པ༏་བཞག་པ	'jog pa; bzhag pa	usadit se; spočívat	usad	prov	učitel: to settle; to rest | niederlassen; ruhen — ruhen = niedergelassen haben; Perf.
+འཇོམས་པ	'joms pa	přemoci	přem	prov	učitel: to subdue, conquer | bezwingen, besiegen; alt: zdolat, porazit
+ཀ་དག	ka dag	prapůvodně čistý	prapůvodn	prov	učitel: primordially pure | alpha-rein
+ཁམ་མཆུ	kham mchu	pomluva	pomluv	prov	učitel: defamation | Verleumdung
+ཁམས	khams	smyslové základy	základ	prov	učitel: dhātu, twelve sense bases | 12 Sinnesbasen — Basis, Dhatu; alt: dhátu
+འཁོན་འཐབ	'khon 'thab	nepřátelství a svár	nepřátelství	prov	učitel: enmity and strife | Feindschaft und Streit
+འཁོར	'khor	družina	družin	prov	učitel: retinue, entourage | Gefolge, Umfeld; alt: doprovod
+འཁོར་བ་དོང་ནས་སྤྲུགས་པ	'khor ba dong nas sprugs pa	otřást samsárou v jejích hlubinách	otřás	prov	učitel: to shake saṃsāra to its depths | Samsara in seiner Tiefe erschüttern
+འཁོར་བ་དོང་སྤྲུགས་པ	'khor ba dong sprugs pa	otřesení samsáry v jejích hlubinách	otřes	prov	učitel: shaking saṃsāra to its depths | den Daseinskreislauf in seiner Tiefe erschüttern
+འཁོར་འདས་རུ་ཤན	'khor 'das ru shan	rozlišení samsáry a nirvány	rozliš	prov	učitel: separating saṃsāra and nirvāṇa | das Unterscheiden von Samsara und Nirwana — die Grenze dazwischen klar machen
+ཁོར་ལོ	khor lo	čakra	čakr	prov	učitel: chakra | Chakra; alt: kolo
+ཁྲག་འཐུང	khrag 'thung	pijan krve	pijan	prov	učitel: blood-drinker (Heruka) | Bluttrinker (Heruka); alt: krvepijec
+ཁྲེགས་ཆོད	khregs chod	trekčhö	trekčhö	prov	učitel: Cutting Through | Durchtrennen der Härte — von Subjekt und Objekt, vgl. Lama Tendzin Sampel; alt: proseknutí tvrdosti
+ཁྲོ་བོ་བཅུ	khro bo bcu	deset hněvivých	hněviv	prov	učitel: the ten wrathful ones | die zehn Zornvollen
+འཁྲུལ་འཁོར	'khrul 'khor	thrülkhor	thrülkhor	prov	učitel: Thrülkhor | Thrülkhor
+འཁྲུལ་རྟོག	'khrul rtog	zmatené myšlenky	myšlen	prov	učitel: deluded thoughts | verwirrte Gedanken — im Kommentar häufig
+ཁྲུས	khrus	omytí	omyt	prov	učitel: ablution | Waschung; alt: obmytí
+ཁྱབ་བདག	khyab bdag	všeobjímající pán	pán	prov	učitel: universal lord | alles umspannenden Herrn
+ཁྱབ་བརྡལ	khyab brdal	prostupující a rozprostřený	prostup	prov	učitel: pervading and expansive | durchdringend (und) ausgedehnt — auch gdal
+ཁྱབ་པ	khyab pa	prostoupení	prostoup	prov	učitel: pervading, pervasion | Durchdringung
+ཁྱེར་སོ་གསུམ	khyer so gsum	trojí přinášení	přináš	open	učitel: the threefold bringing | das dreifache Bringen; alt (dup row): trojí praxe
+ཀླ་ཀློ	kla klo	barbar	barbar	prov	učitel: barbarian | Barbar
+ཀུན་བརྟགས	kun brtags	přisouzená přirozenost	přirozenost	prov	učitel: parikalpita, imputed nature | zugeschriebene Natur
+ཀུན་འབྱུང་གི་བདེན་པ	kun 'byung gi bden pa	pravda o vznikání	pravd	prov	učitel: truth of origins | die Wahrheit des Entstehens; alt: pravda o původu
+ཀུན་གཞི	kun gzhi	vědomí základu všeho	vědom	prov	učitel: ālaya, universal ground consciousness | Allgrund-Bewusstsein; alt: álaja
+ཀུན་རྫོབ	kun rdzob	konvenční	konvenčn	prov	učitel: saṃvṛti, conventional | herkömmlich(-verdeckend); alt: zastírající
+ལམ་དུ་ཁྱེར་བ	lam du khyer ba	vzít jako cestu	vz	prov	učitel: to take as the path | als Pfad nehmen
+ལན་ཆགས	lan chags	karmičtí dlužníci	dlužní	prov	učitel: karmic debtors | Karma-Schuldnern
+ལས་བྱང	las byang	příručka aktivity	příruč	prov	učitel: activity manual | Aktivitätsmanual; alt: manuál aktivity
+ལས་འདས་པ	las 'das pa	přesáhnout	přesáh	prov	učitel: to transcend, go beyond | übersteigen, darüber hinausgehen; alt: jít za
+ལས་རབ་རྫོགས་པའི་ཞིང	las rab rdzogs pa'i zhing	říše dokonale dovršené aktivity	říš	prov	učitel: Karmaprasiddhi, realm of perfectly accomplished activity | Buddha-Bereich der Vollständig Vollkommen Aktivität — Karmaprasiddhi
+ལྷ	lha	božstvo	božstv	prov	učitel: deity | Gottheit
+ལྷག	lhag	ztráta slibů	ztrát	prov	učitel: loss of vows | Verlust — von Gelübden der individuellen Befreiung
+ལྷག་མཐོང	lhag mthong	vhled	vhled	prov	učitel: insight | Einsicht; alt: vipašjana
+ལྷག་པའི་ལྷ་མཆོག	lhag pa'i lha mchog	nejvyšší přesahující božstvo	božstv	prov	učitel: supreme transcendent deity | Höchste überragende Gottheit
+ལྷན་ཅིག་སྐྱེས	lhan cig skyes	současně vznikající	vznik	prov	učitel: coemergent | zugleich entstehend; alt: spoluvznikající
+ལོ་ནད	lo nad	neúroda	neúrod	prov	učitel: crop disease, bad harvest | Missernte
+ལྟུང་བྱེད	ltung byed	pád se ztrátou slibu	pád	open	učitel: downfall with forfeiture | Verfall mit Aufgeben — von Gelübden der individuellen Befreiung; alt: prohřešek
+ལུ་གུ་རྒྱུད	lu gu rgyud	řetěz	řetěz	prov	učitel: chain | Kette
+ལུགས	lugs	tradice	tradic	prov	učitel: tradition | Tradition
+ལུགས་འབྱུང་ཡས་བབས	lugs 'byung yas babs	sestupný postup vpřed	postup	open	učitel: descending forward progression | absteigenden Vorwärtsentwicklung — Abwärtsbewegung der Freuden bei der Tummo Praxis
+ལུགས་ལྡོག་མས་བརྟན	lugs ldog mas brtan	vzestupný postup vzad	postup	open	učitel: ascending backward progression | aufsteigenden Rückwärtsentwicklung — Aufwärtsbewegung der Freuden bei der Tummo Praxis
+མ་བཅོས	ma bcos	nestrojený	nestrojen	prov	učitel: unfabricated | ungekünstelt
+མ་འགག,་འགག་མེད	ma 'gag, 'gag med	bez překážek	bez překážek	prov	učitel: unimpeded | ungehindert; alt: dle glosáře ('gags med)
+མ་ནམ་བཞི་སྐོར	ma nam bzhi skor	čtyři „Mé matky…”	matk	prov	učitel: four „My mothers…” | Die vier “Meine Mütter…”
+མ་རིག་པ	ma rig pa	nevědomost	nevědomost	prov	učitel: avidyā, ignorance, non-awareness | Nicht-Gewahrsein; alt: neuvědomování, avidjá
+མཨ་མ་ཀིཨི	maa ma kii	Mámakí	Mámak	prov	učitel: Māmakī | Māmakī
+མཉཛི	manydzi	stolek	stol	prov	učitel: little table | Tischchen
+མཆེད་པ	mched pa	vzrůst	vzrůst	prov	učitel: increase | Vermehren; alt: rozrůstání; druhá ze čtyř fází rozplynutí
+མཆོད་པ	mchod pa	obětina	obětin	prov	učitel: offering, to offer | Opfergabe, opfern; alt: obětovat (jako sloveso)
+མདངས	mdangs	lesk	lesk	prov	učitel: radiance | Glanz, Schimmer; alt: třpyt, jasnost
+མདུན་བསྐྱེད	mdun bskyed	vytváření před sebou	vytvář	prov	učitel: front creation | Front-Entstehung; alt: čelní vizualizace
+མེ་ལོང་ཡེ་ཤེས	me long ye shes	moudrost podobná zrcadlu	moudrost	prov	učitel: mirror-like wisdom | spiegelgleiche Weisheit
+མེ་མཆོད	me mchod	ohňová oběť	obět	prov	učitel: fire offering | Feueropfer
+མེད་པ	med pa	neexistence	neexistenc	prov	učitel: nonexistence, nothingness | Nichtheit; alt: nicota
+མགལ་མེའི་འཁོར་ལོ	mgal me'i 'khor lo	ohnivé kolo	kol	prov	učitel: fire wheel | Feuerkreis
+མགོན་པོ	mgon po	ochránce	ochránc	prov	učitel: protector; for Buddhas: refuge | Schützer — Für Buddhas: Beschützer; alt: u buddhů útočiště
+མི་འགུལ་བ་གསུམ	mi 'gul ba gsum	tři nehybnosti	nehybnost	prov	učitel: three non-movements | drei Nicht-Bewegungen
+མི་ཁ	mi kha	pomluva	pomluv	prov	učitel: slander, evil talk | üble Nachrede; alt: zlé řeči
+མི་རྟག	mi rtag	nestálý	nestál	prov	učitel: impermanent | unbeständig
+མི་རྟོག	mi rtog	nepojmový	nepojm	prov	učitel: non-conceptual, non-discursive | Nicht-Begrifflichkeit, Nicht-Konzeptualität — Nicht-Gedanken; alt: bez pojmů, nediskurzivní
+མི་སླུབ་བ	mi slub ba	neomylný	neomyl	prov	učitel: infallible, unerring | untrügliche, unfehlbar
+མི་ཡེང་བ	mi yeng ba	nerozptýlený	nerozptýlen	prov	učitel: undistracted | unabgelenkt
+མཁྱེན་བརྩེ	mkhyen brtse	poznání a láska	poznán	prov	učitel: wisdom and compassion, knowledge and love | Wissen und Liebe; alt: moudrost a soucit
+མཁྱེན་གཟིགས	mkhyen gzigs	vševědoucí a vševidoucí	vševědoucí	prov	učitel: omniscient and all-seeing | allwissend und -sehend — {gnas lugs ji lta ba mkhyen pa'i ye shes} + {shes bya ji snyed pa gzigs pa'i ye shes}
+མངལ་མེ	mngal me	ohnivé kolo	kol	prov	učitel: fire wheel [visualization] | Feuerkreis — Visualisation in Yidam-Praxis
+མངོན་དུ་གྱུར་པ	mngon du gyur pa	zjevit se	zjev	prov	učitel: to make evident, manifest | offensichtlich machen/werden lassen; alt: učinit zjevným, projevit
+མངོན་རྟོགས	mngon rtogs	přímá realizace	realizac	prov	učitel: abhisamaya, direct realization | wirkliches Erkennen — kanonische Beschreibung einer Gottheit; alt: abhisamaja
+མངོན་ཤེས	mngon shes	jasnozřivost	jasnozřivost	prov	učitel: abhijñā, clairvoyance | Hellsichtigkeit; alt: abhidžňá
+མངོན་སྤྱོད	mngon spyod	zjevná aktivita	aktivit	prov	učitel: manifest activity | Deutliche Handlung
+མཉམ་ཉིད་ཡེ་ཤེས	mnyam nyid ye shes	moudrost rovnosti	moudrost	prov	učitel: wisdom of equality | Weisheit der Gleichheit
+མོ་རྩིས	mo rtsis	věštba a výpočet	věštb	prov	učitel: divination and calculation | Orakel und Berechnung; alt: orákulum a astrologický výpočet
+མོས་གུས	mos gus	oddanost	oddanost	prov	učitel: devotion | Hingabe
+མོས་པ་མཐའ་ཡས	mos pa mtha' yas	Adhimukta	Adhimukt	prov	učitel: Adhimukta, also Anantādhimukti | Adhimukta, auch Anantādhimukti — letzter Buddha dieses glücklichen Zeitalters; alt: též Anantádhimukti
+མཐའ་རྟེན་བཞི	mtha' rten bzhi	čtyři podpory	podpor	prov	učitel: four supports | vier Stützen
+མཐར	mthar	nakonec	nakonec	prov	učitel: finally | schließlich
+མཐུན་རྫས	mthun rdzas	oblíbené substance	substanc	prov	učitel: preferred substances | bevorzugte Substanzen; alt: odpovídající substance
+མཚམས	mtshams	ústraní	ústraní	prov	učitel: retreat | Zurückziehung; alt: uzavřená praxe
+མཚམས་གཅོད་ཀྱི་ཁྲོ་བོ	mtshams gcod kyi khro bo	hněvivá božstva vymezující hranici	hněviv	prov	učitel: boundary-marking wrathful ones | die Grenze ziehende Zornvolle
+མཚམས་ཁང	mtshams khang	poustevna	poustevn	prov	učitel: retreat hut | Zurückziehungshütte; alt: chýše v ústraní
+མཚམས་རྡིལ	mtshams rdil	zástupce v ústraní	zástupc	open	učitel: retreat proxy | Zurückziehungs-Stellvertreter; alt: předmět zastupující praktikujícího v ústraní
+མཚམས་སྦྱོར	mtshams sbyor	rámcový text zplnomocnění	rámcov	open	učitel: empowerment outline | Ermächtigungsrahmentext
+མཚན་དཔེ	mtshan dpe	32 znaků a 80 znamení	znak	prov	učitel: 32 marks and 80 signs | 32 Merkmale und 80 Zeichen — eines Buddhas; alt: 32 hlavních znaků a 80 vedlejších znamení
+མུ་སྟེགས་པ	mu stegs pa	tírthika	tírthik	prov	učitel: tīrthika, ford-maker | Tīrthika, Furtler; alt: tvůrce brodu
+ནམ་མཁའ་སུམ་ཕྲུག	nam mkha' sum phrug	trojnásobný prostor nebe	prostor	prov	učitel: threefold space | dreifacher Himmelsraum — sum phrug bedeutet, dass die drei darunterliegend eine Einheit bilden, integriert sind!
+ནང་སྒྲུབ	nang sgrub	vnitřní praxe	prax	prov	učitel: inner practice | innere Praxis — Kagyü Terminologie, innere Yidam-Praxis
+ངག་མཚམས	ngag mtshams	ústraní řeči	ústraní	prov	učitel: speech retreat, vocal retreat | Redeklausur; alt: uzavření řeči
+ངལ་གསོ	ngal gso	nalézt odpočinek	nal	prov	učitel: finding rest | Ruhe finden
+ངང	ngang	stav	stav	prov	učitel: state, dimension | Zustand, Dimension; alt: dimenze
+ངེས་འབྱུང	nges 'byung	odříkání	odříkán	prov	učitel: renunciation, turning toward reality | (entsagend) Ausrichten auf das Wahre; alt: obrácení se k pravému
+ངེས་ཤེས	nges shes	jistota	jistot	prov	učitel: certainty | Gewissheit
+ངོ་ཤེས	ngo shes	rozpoznat	rozpozn	prov	učitel: recognize | erkennen
+ངོ་སྤྲོད	ngo sprod	uvedení	uveden	prov	učitel: introduction, pointing-out | Einführung [in das Antlitz] — wörtlich "die Essenz/das Antlizt übergeben"; alt: uvedení do tváře (esence)
+ཉམས་snang་གོང་འཕེལ་བ	nyams [snang] gong 'phel ba	rozšiřování zkušenostních zjevů	rozšiř	prov	učitel: increasing of experience [visions] | das Ausweiten der Erfahrung [-serscheinungungen] — Thögäl
+ཉམས་ཆག	nyams chag	porušení a prohřešky	porušen	prov	učitel: violations and breaches | violations and breaches — Verletzungen und Brüche | der Gelübte und Samayas
+ཉམས་སྣང	nyams snang	zkušenostní zjev	zjev	prov	učitel: visionary experience | Erfahrungserscheinung — hat den Unterton von visionshaften Erfahrungen; alt: vizionářská zkušenost
+ཉམས་སུ་ལེན	nyams su len	uvést do zkušenosti	uv	prov	učitel: to take into experience | in die Erfahrung bringen; alt: praktikovat
+ཉེར་སྤྱོད	nyer spyod	obecné obětiny	obětin	prov	učitel: general offerings | allgemeine Opfergaben
+ཉེར་ཐོབ	nyer thob	blízké dosažení	dosažen	prov	učitel: near-attainment | Nah-Erlangen
+ཉེས་བྱེད	nyes byed	prohřešky	prohřeš	prov	učitel: faults, wrongdoing | Fehler — von Gelübden der individuellen Befreiung; alt: chyby
+ཉོན་མོངས	nyon mongs	rušivá emoce	rušiv	prov	učitel: kleśa, afflictive emotion | Störgefühl, klesha; alt: kléša
+ཉོན་ཡིད	nyon yid	rušivá mentální mysl	rušiv	open	učitel: kleśa-manas, afflicted mental consciousness | Störgefühlsmentalgeist; alt: kléšamanas
+ཉོན་ཡིད་ཀྱི་རྣམ་པར་ཤེས་པ	nyon yid kyi rnam par shes pa	rušivé mentální vědomí	vědomí	open	učitel: afflicted mental consciousness | Störgefühlsmentalbewusstsein — nyon mongs pa'i yid kyi rnam par shes pa
+འོད་གསལ	'od gsal	jasné světlo	světl	prov	učitel: clearlight | Klarlicht
+འོད་གསལ་རྫོགས་ཆེན	'od gsal rdzogs chen	jasné světlo velké dokonalosti	světl	prov	učitel: clearlight - Great Perfection | Klarlicht - Große Vollkommenheit; alt: jasné světlo — dzogčhen
+ཨོད་འཕྲོས	od 'phros	vyzařovat světlo	vyzař	prov	učitel: light goes out | Licht geht aus
+ཨོག་ཕྱོགས	og phyogs	nadir	nadir	prov	učitel: nadir | Nadir; alt: dolní směr
+ཕ་རོལ་ཏུ་ཕྱིན་པ	pha rol tu phyin pa	páramitá	páramit	prov	učitel: pāramitā, transcendent perfection | (hinüberführende) Vollendung, Pāramitā; alt: (převáděcí) dokonalost
+ཕགས་མ	phags ma	Vznešená paní	paní	prov	učitel: Noble Lady | Edle Herrin
+ཕམ	pham	úplná ztráta slibů	ztrát	prov	učitel: defeat, complete loss of vows | völliger Verlust — von Gelübden der individuellen Befreiung; alt: porážka
+ཕན་ཡོན	phan yon	užitek	užit	prov	učitel: benefit | Nutzen; alt: přínos
+ཕྲོ་བ	phro ba	vycházet	vych	prov	učitel: to go out | ausgehen; alt: vyzařovat
+ཕྲོས་པ	phros pa	vycházet	vych	prov	učitel: to go out | ausgehen; alt: vyzařovat
+འཕྲུལ་འཁོར	'phrul 'khor	klamné mechanismy	mechanism	prov	učitel: deluded mechanisms | (verwirrten) Mechanismen
+ཕུག་གཏོར	phug gtor	torma praxe	torm	prov	učitel: practice torma | Praxis-Torma
+ཕུན་སུམ་ཚོགས	phun sum tshogs	hojný	hojn	prov	učitel: perfect, abundant | überreichlich; alt: dokonalý, oplývající
+ཕུང་པོ	phung po	skandha	skandh	prov	učitel: skandha, aggregates | 5 Skandha, Anhäufung; alt: pět skandh, nakupení
+ཕུར་བ	phur ba	kilája	kiláj	prov	učitel: kila, phurba | Kila, Phurba; alt: phurba; dle glosáře je délka na druhé slabice (ki-LÁ-ja)
+ཕྱག་འཚལ་བ	phyag 'tshal ba	klanět se	klan	prov	učitel: to bow down, prostrate | verneigen, niederwerfen; alt: poklonit se, klesnout k zemi
+ཕྱལ་བ	phyal ba	otevřenost	otevřenost	prov	učitel: openness | Offenheit
+ཕྱེད་ངག	phyed ngag	poloviční řeč	řeč	prov	učitel: half-speech | halbe Rede
+རབ་འབྱམས	rab 'byams	nekonečný	nekonečn	prov	učitel: infinite, countless | unendlich, unzählbar; alt: nespočetný
+རབ་ཏུ་བྱུང་བ	rab tu byung ba	odejít do bezdomoví	odej	open	učitel: pravrajyā, to renounce, renunciant | entsagen, Entsagender; alt: odříkající se, asketa
+རང་བབ	rang bab	samovolně usazený	samovoln	open	učitel: self-released | selbstfallengelassen — es sollte ein einziges Wort sein, auch wenn es Kunstwort ist; alt: sám v sobě uvolněný
+རང་བཞིན	rang bzhin	přirozenost	přirozenost	prov	učitel: nature | Natur
+རང་བཞིན་བརྒྱད་ཅུའི་ཀུན་རྟོག	rang bzhin brgyad cu'i kun rtog	osmdesát přirozeně přítomných myšlenek	myšlen	prov	učitel: eighty inherent thought states | achtzig natürlich vorhandene Gedanken — 33 resulting from anger, 40 from desire and 7 from delusion.
+རང་དབང	rang dbang	nezávislost	nezávislost	prov	učitel: independence, self-mastery | Macht der Selbstbestimmtheit; alt: vláda nad sebou
+རང་རིག	rang rig	vědomý si sám sebe	vědom	prov	učitel: svasaṃvedana, self-aware | selbst gewahr; alt: svasamvédana
+རྫས་གཅིག	rdzas gcig	jediná substance	substanc	prov	učitel: single substance | eine Substanz
+རྫོགས་ཆེན	rdzogs chen	dzogčhen	dzogčhen	prov	učitel: Dzogchen, Great Perfection | Große Vollkommenheit; alt: velká dokonalost
+རྫོགས་རིམ	rdzogs rim	fáze dovršení	dovrš	prov	učitel: dzogrim, completion stage | Vollendungsstufe; alt: dzogrim
+རེ་མ་ཏི	re ma ti	Remati	Remati	prov	učitel: Remati | Remati
+རྒོད	rgod	rozrušení	rozrušen	prov	učitel: agitation | Wildheit; alt: divokost, rozjaření
+རྒྱ་གྲམ	rgya gram	dvojitá vadžra	vadžr	prov	učitel: double vajra | Doppel-Vajra
+རྒྱ་རྒྱ་རྒྱ	rgya rgya rgya	Pečeť. Pečeť. Pečeť.	pečet	prov	učitel: Seal. Seal. Seal. | Siegel. Siegel. Siegel.
+རྒྱང་འབོད	rgyang 'bod	Volání z dálky	volán	prov	učitel: Calling from Afar | Aus der Ferne rufen
+རྒྱང་ཞགས་ཆུའི་སྒྲོན་མ	rgyang zhags chu'i sgron ma	vodní lampa dalekosáhlého lasa	lamp	prov	učitel: water lamp of the far-reaching lasso | Wasser-Lampe des weit reichende Lassos
+རྒྱུ་ཏིང་ངེ་འཛིན་གསུམ	rgyu ting nge ’dzin gsum	tři samádhi jako příčina	samádhi	prov	učitel: the three samādhis as cause | die drei Samādhis als Ursache
+རྒྱུད་ལུང་མན་ངག	rgyud lung man ngag	tantry, písma a přímé pokyny	tantr	prov	učitel: tantras, scriptures and pith instructions | Tantras, Schriften und direkte Anweisungen
+རི་ཆོས	ri chos	horská dharma	dharm	prov	učitel: mountain dharma | Bergdharma
+རི་རབ	ri rab	hora Méru	mér	prov	učitel: Mt. Meru | Weltenberg; Meru; alt: Světová hora
+རིག་པ	rig pa	rigpa	rigp	prov	učitel: rigpa, awareness | Gewahrsein; alt: uvědomění
+རིག་པ་དབྱིངས་ཀྱི་སྒྲོན་མ	rig pa dbyings kyi sgron ma	lampa základního prostoru rigpy	lamp	prov	učitel: lamp of the basic space of awareness | Lampe des Gewahrseinsgrundraums
+རིག་པ་འཛིན་པ	rig pa 'dzin pa	vidjadhára	vidjadhár	prov	učitel: awareness holder | Gewahrseinshalter; alt: dle glosáře
+རིག་པ་ཚད་ཕེབས	rig pa tshad phebs	rigpa dosahující plné míry	rigp	prov	učitel: awareness reaching fullness | das Erreichen des vollen Maßes des Gewahrseins — Thögäl
+རིག་པའི་རྩལ,་རིག་རྩལ	rig pa'i rtsal, rig rtsal	kreativní síla rigpy	síl	prov	učitel: creative power of awareness | Gewahrseinskreativität
+རིགས་ཀྱི་བུ	rigs kyi bu	dítě z urozeného rodu	dít	prov	učitel: noble child | Kind aus edler Familie; alt: syn dobrého rodu
+རྗེ་འབངས	rje 'bangs	král a poddaní	král	prov	učitel: sovereign and subjects | König und Untertanen
+རྗེ་བཙུན	rje btsun	ctihodný mistr	mistr	prov	učitel: revered Master | verehrter Meister
+རྗེ་བཙུན་མ	rje btsun ma	ctihodná mistryně	mistryn	prov	učitel: revered Lady | verehrte Meisterin
+རྗེས་གནང	rjes gnang	požehnané svolení	svolen	prov	učitel: blessing permission | Segenserlaubnis; alt: anudžňá
+རྗེས་གཞིག	rjes gzhig	následné zničení	zničen	prov	učitel: subsequent destruction | Nach-Zerstörung
+རྗོད་པ	rjod pa	recitovat	recit	prov	učitel: to recite | rezitieren — [Mantras oder Liturgie laut] rezitieren
+རླུང་རོ	rlung ro	zvětralý vzduch	vzduch	prov	učitel: stale wind | tote Winde; alt: mrtvé větry
+རྨི་ངན	rmi ngan	zlý sen	zl	prov	učitel: bad dream | böser Traum
+རྣམ་པ་ཀུན་གྱི་མཆོག་དང་ལྡན་པ	rnam pa kun gyi mchog dang ldan pa	(moudrost) nesoucí v sobě dokonalost všech aspektů	nesouc	prov	učitel: (the wisdom) possessing the excellence of all aspects | die Vortrefflichkeit aller Aspekte in sich tragend(e Weisheit)
+རྣམ་པར་རྟོག་པ	rnam par rtog pa	pojmové myšlenky	myšlen	prov	učitel: vikalpa, concepts, discursive thoughts | Konzepte, Gedankenketten — rnam par rtog pa; alt: koncepty, řetězce myšlenek
+རྣམ་པར་ཤེས་པ	rnam par shes pa	vědomí	vědomí	prov	učitel: consciousness | Bewusstsein
+རྣམ་རྒྱལ་བུམ་པ	rnam rgyal bum pa	váza vítězství	váz	prov	učitel: victorious vase | Siegesvase
+རྣམ་རོལ	rnam rol	hravý projev	projev	prov	učitel: playful manifestation | spielerische Manifestation
+རྔམས	rngams	majestátní	majestátn	prov	učitel: majestic | majestätisch
+རྙིང་མ	rnying ma	ňingma	ňingm	prov	učitel: old translation school | Alte Tradition, Tradition der Alten Übersetzungen; alt: tradice starých překladů
+རོལ་པ	rol pa	hra	hr	prov	učitel: play, display | (Spiel-) Ausdruck — als manifeste Erscheinung, "The expression of emptiness is the play of appearance"; alt: (hravý) výraz, projev
+རྟག་ཆད་ཀྱི་མཐའ	rtag chad kyi mtha'	extrémy trvalosti a zničení	extrém	prov	učitel: extremes of permanence and annihilation | die Extreme von Beständigkeit und Vernichtung
+རྟེན་འབྲེལ	rten 'brel	závislé vznikání	vznikán	prov	učitel: pratītyasamutpāda, dependent origination, auspicious connection | wechselseitige Bedingungen, glückliche Verbindung; alt: příznivá souvislost
+རྟོགས་དགོངས	rtogs dgongs	vhled realizace	vhled	prov	učitel: realization insight | Verwirklichungseinsicht
+རྩ་འཁོར	rtsa 'khor	kanály čakry	kanál	prov	učitel: chanels [of the] chakra | Kanäle [des] Chakras
+རྩལ	rtsal	kreativní síla	síl	prov	učitel: creative power, potency | Kreativkraft — als Potential; alt: potence
+རྩེ་གཅིག	rtse gcig	jednobodový	jednobodov	prov	učitel: one-pointed | einsgerichtet
+ས་བཞི	sa bzhi	základní půda	základ	open	učitel: ground basis | Grundbasis
+སད་སེར	sad ser	mráz	mr	prov	učitel: frost | Reif; alt: námraza
+སངས་རྒྱས་སྤྱན་མ	sangs rgyas spyan ma	Buddhalóčaná	Buddhalóčan	prov	učitel: Buddhalocana | Buddhalocanā
+སར་མ	sar ma	sarma	sarm	prov	učitel: new translation school | Neue Tradition, Tradition der Neuen Übersetzungen; alt: tradice nových překladů
+སྦྱིན་པ	sbyin pa	štědrost	štědrost	prov	učitel: generosity | Großzügigkeit; alt: dávání
+སྦྱིན་སྲེག	sbyin sreg	ohňová oběť homa	obět	prov	učitel: homa fire offering | Homa(-Feueropfer)
+སྦྱོར་ཡུམ	sbyor yum	choť ve spojení	chot	prov	učitel: union consort | Vereinigungsgefährtin
+སྡང	sdang	nenávist	nenávist	prov	učitel: hatred | Hass
+སྡིག་པ	sdig pa	pachatel zla	pachatel	open	učitel: evil doer | Übertuer; alt: jinde sdig pa = prohřešek, negativita
+སྡིག་སྒྲིབ	sdig sgrib	prohřešky a zatemnění	prohřeš	prov	učitel: negativities and veils | Negativitäten und Schleier
+སྡིགས་མཛུབ	sdigs mdzub	hrozivá mudra	mudr	prov	učitel: threatening mudrā | Bedrohungs-Mudrā
+སྡོད་པ་གསུམ	sdod pa gsum	trojí spočívání	spočív	prov	učitel: three abidings | dreifaches Verweilen
+སྡོམ་བསླབ་པ་དམ་ཚིག	sdom bslab pa dam tshig	sliby, cvičení a samaje	slib	prov	učitel: vows, trainings and samayas | Gelübde, Übungen und Samayas
+སེ་མོ་དོ	se mo do	dlouhý náhrdelník	náhrdelník	prov	učitel: long necklace | lange Halskette
+སེམས	sems	mysl	mysl	prov	učitel: citta, mind | Geist; alt: čitta
+སེམས་ཉིད	sems nyid	takovost mysli	takovost	prov	učitel: Chittatā, mind suchness | Geist-Soheit — vor allem in Kagyü Übersetzungen wichtiger Terminus; prádžňá? ne; alt: podstata mysli
+སྒེགས་པ	sgegs pa	koketní	koket	prov	učitel: coquettish | kokett
+སྒོ་སྲུང	sgo srung	strážce bran	strážc	prov	učitel: the gatekeeper | Torhüter
+སྒྲིབ	sgrib	zatemnění	zatemněn	prov	učitel: veils | Schleier
+སྒྲོ་འདོགས	sgro 'dogs	mylné domněnky	domněnk	prov	učitel: superimposition, false assumptions | [falsche, übertriebene] Annahmen; alt: přisuzování, mylné přisouzení
+སྒྲོལ་ཡུམ	sgrol yum	partnerka osvobození	partnerk	prov	učitel: liberation consort | Befreiungsgefährtin; alt: družka osvobození
+སྒྲུབ་བརྒྱུད	sgrub brgyud	linie uskutečnění	lini	prov	učitel: practice lineage, accomplishment lineage | Verwirklichungslinie; alt: linie praxe
+སྒྲུབ་གཏོར	sgrub gtor	torma praxe	torm	prov	učitel: practice torma | der Praxis-Torma
+སྒྲུབ་པ་བཀའ་བརྒྱད	sgrub pa bka' brgyad	Osm učení sádhany	učen	prov	učitel: Eight Sādhana Teachings | Acht Sadhana-Anweisungen; alt: Osm sádhanových pokynů
+སྒྲུབ་ཐབས	sgrub thabs	text praxe	text	prov	učitel: practice text | Praxistext; alt: sádhana
+སྒྱུ་ལུས	sgyu lus	iluzorní tělo	těl	prov	učitel: illusory body | Illusionskörper
+ཤེས་བྱ	shes bya	objekt poznání	objekt	prov	učitel: knowables | Wissensobjekt
+ཤེས་ཉམས	shes nyams	zkušenost poznání	zkušenost	prov	učitel: knowledge experience | Erkennserfahrung
+ཤེས་པ	shes pa	poznávání	poznáv	prov	učitel: cognition, knowing | Erkennen, Erkennerfahrung — die Erfahrung, dass etwas erkannt wird; alt: poznávající zkušenost
+ཤེས་རབ	shes rab	nejvyšší poznání	poznán	prov	učitel: prajñā, supreme knowledge | Höchstes Erkennen — großgeschrieben, quasi Eigenname; alt: prádžňá; ye shes = moudrost, proto shes rab nikoli „moudrost“
+ཤེས་རབ་རང་བྱུང་གི་སྒྲོན་མ	shes rab rang byung gi sgron ma	lampa samovzniklého nejvyššího poznání	lamp	prov	učitel: lamp of self-arisen wisdom | Lampe des selbstentstandenen höchsten Erkennens
+ཤེས་རིག	shes rig	poznávající uvědomění	poznáv	prov	učitel: knowing awareness | Wissensgewahrsein
+ཤུགས་འགྲོ	shugs 'gro	šákiní	šákiní	prov	učitel: śākinī, power-mover | Shakini, kraftbewegt; alt: ta, jež se hýbe silou
+སིབ་སིབ	sib sib	velmi jemně	jemn	prov	učitel: very gently | ganz sanft
+སིནདྷུར	sindhur	sindhura	sindhur	prov	učitel: sindhura | Sindhura
+སྐལ་བ	skal ba	šťastlivec	šťastliv	prov	učitel: fortunate one | vom Glück begünstigt, Glücklicher; alt: obdařený štěstím
+སྐུ	sku	kája	káj	prov	učitel: kāya, buddha body | (Buddha-)Körper; alt: (buddhovské) tělo
+སྐུ་ཙཀ	sku tsak	zpodobení těla	zpodoben	prov	učitel: body-representation | Körper-Bildnis; alt: podobizna těla
+སྐུལ་བ	skul ba	vzývat	vzýv	prov	učitel: to invoke, urge, instigate | drängen, aktivieren, beschwören, anstiften; alt: pobízet, aktivovat, podněcovat
+སྐུར་བཞེངས་པ	skur bzhengs pa	přijmout podobu	přij	prov	učitel: to assume form | Gestalt annehmen
+སྐྱེ་བ	skye ba	nové zrození	zroz	prov	učitel: rebirth, to be born again | [neuerliche] Geburt, [neuerlich] geboren werden — nicht: Wiedergeburt!!!; alt: znovu se zrodit; nikoli „znovuzrození“
+སྐྱེ་མཆེད	skye mched	ájatana	ájatan	prov	učitel: āyatana, eighteen sense sources | 18 Sinnesquellen, Ayatana — Consciousnesses are called sources (āyatana, skye mched) because foregoing instants of consciousness give rise to subsequent ones. Finding rest in the Nature of Mind; alt: osmnáct smyslových zdrojů
+སྐྱེད་བ	skyed ba	vytvářet	vytvář	prov	učitel: generate | hervorbringen; alt: vydat, dát vzejít; ne „generovat“
+སྐྱེད་རིམ	skyed rim	fáze rozvoje	fáz	prov	učitel: kyerim, generation stage | Entstehungsstufe; alt: kjerim, fáze vytváření
+སྐྱོང་བ	skyong ba	udržovat	udržov	prov	učitel: to maintain, protect | aufrechterhalten, behüten; alt: chránit, opatrovat
+སྨྲ་བསམ་བརྗོད་མེད	smra bsam brjod med	mimo slovo, myšlenku i popis	mimo slovo	prov	učitel: beyond word, thought or expression | jenseits von Wort, Denken oder Beschreibung
+སྣང་བ	snang ba	jev	jev	prov	učitel: appearance | Erscheinung; alt: zjev, zjevení
+སྣང་བ་བཞི	snang ba bzhi	čtyři vize	viz	prov	učitel: four visions | die vier Schau-Erscheinungen — Thögäl; alt: čtyři zjevení
+སྣང་སྲིད་ཟིལ་གནོན	snang srid zil gnon	oslnivý podmanitel jevové existence	podmanitel	open	učitel: dazzler of appearances and subduer of existence | Blender der Erscheinungswelt und Unterwerfer der Wesen; alt: ten, kdo oslňuje jevy a podmaňuje jsoucí
+སོ་སོ་རང་གིས་རིག་པ	so so rang gis rig pa	vědomý si sebe sama	vědom	prov	učitel: self-aware | selbst-gewahr — oder auch: so so rang rig
+སོ་སོར་རང་གིས་རིག་པ	so sor rang gis rig pa	vědomý si sebe sama	vědom	prov	učitel: self-aware | selbst-gewahr — oder auch: so sor rang rig
+སོ་སོར་རང་གིས་རིག་པའི་ཡེ་ཤེས	so sor rang gis rig pa'i ye shes	moudrost vědomá si sebe sama	moudrost	prov	učitel: personally intuited gnosis | die für einen selbst gewahre Weisheit — Kapstein: "personally intuited gnosis"
+སོར་རྟོག་ཡེ་ཤེས	sor rtog ye shes	rozlišující moudrost	moudrost	prov	učitel: discriminating wisdom | unterscheidende Weisheit
+སྤང་ལྟུང	spang ltung	částečná ztráta slibů	ztrát	prov	učitel: partial loss of vows | Verlust mit Resten — von Gelübden der individuellen Befreiung
+སྤོས	spos	kadidlo	kadidl	prov	učitel: incence | Räucherwerk; alt: vonná látka
+སྤྲོས་བྲལ	spros bral	prostý umělosti	prost	prov	učitel: free from elaboration | frei von Künstlichkeit; alt: bez rozvíjení pojmů
+སྤྲོས་པ	spros pa	umělost	uměl	prov	učitel: artificial, eleborate | künstlich, Künstlichkeit; alt: umělý
+སྤྲུལ་པ	sprul pa	emanace	emanac	prov	učitel: to emanate, emanation | Ausstrahlung, ausstrahlen; alt: vyzařovat, vyzařování
+སྤུ་གྲི	spu gri	břitva	břitv	prov	učitel: razor | Rasiermesser; dle glosáře spu gri reg phung = Břitva, jež ničí dotekem
+སྤྱི་དཔལ	spyi dpal	všeprostupující sláva	sláv	prov	učitel: all-pervading glory | allerorts glorreich
+སྲས	sras	synové	syn	prov	učitel: spiritual children, heirs | Kind(er) — für Bodhisattvas; alt: děti, dědicové; dle glosáře sras bcas = vítězů i jejich synů
+སྲི	sri	démon zkázy	démon	prov	učitel: destruction demon | Zerstörungsdämon — die 10 sri
+སྲིད་གསུམ	srid gsum	tři existence	existenc	prov	učitel: three existences | drei Existenzen
+སྲུང་བ	srung ba	chránit	chrán	prov	učitel: to guard, the guard | behüten, Hüter; alt: strážce, ochránce
+སྲུང་འཁོར	srung 'khor	ochranný kruh	kruh	prov	učitel: protection circle | Schutzkreis
+སྟ་གོན	sta gon	přípravný rituál	rituál	prov	učitel: preliminary ritual | Vorbereitungsritual
+སྟེང	steng	sídlo	sídl	open	učitel: seat | Sitz; alt: sedadlo, trůn
+སྟེང་ཕྱོགས	steng phyogs	zenit	zenit	prov	učitel: zenith | Zenith
+སྟེར་བ	ster ba	darovat	darov	prov	učitel: to give, to grant | schenken, geben; alt: udělit, dát
+སྟིམ་པ	stim pa	rozplynout se	rozply	prov	učitel: to dissolve | verschmelzen; alt: splynout
+སྟོང་གསུམ	stong gsum	soustava tří tisíc světů	soustav	prov	učitel: three-thousand world system | 3.000-Welt
+སྟོང་ར	stong ra	prázdné ohraničení	ohraničen	prov	učitel: empty perimeter | leere Umgrenzung
+སྟོང་ཚིགས	stong tshigs	tisíc slov	slov	prov	učitel: thousand words | Tausend Worte — Weil diese kurzen Formeln von Opferung und Preisung nach jeweils 1.000 Mantras rezitiert wurden
+ཐབས་དང་ཤེས་རབ	thabs dang shes rab	metoda a poznání	metod	prov	učitel: means and knowledge, skillful means and wisdom | Methode und Wissen; alt: obratné prostředky a poznání
+ཐག་བཅོད་པ	thag bcod pa	učinit konečné rozhodnutí	učin	prov	učitel: to make a definitive decision | eine (endgültige) Entscheidung treffen, entscheiden; alt: rozhodnout s konečnou platností
+ཐན་ལྟས	than ltas	zlé znamení	znamen	prov	učitel: bad omen | schlechtes Vorzeichen
+ཐིག་ལེ་ཉག་གཅིག	thig le nyag gcig	jediná sféra	sfér	prov	učitel: the single sphere | der Eine Tropfen; alt: jediné thigle
+ཐིག་ལེ་སྟོང་པའི་སྒྲོན་མ	thig le stong pa'i sgron ma	lampa prázdných sfér	lamp	prov	učitel: lamp of the empty spheres | Lampe der leeren Tropfen
+ཐིམ་པ	thim pa	rozplynout se	rozply	prov	učitel: to dissolve | verschmelzen; alt: splynout
+ཐོབ་པ	thob pa	dosáhnout	dosáh	prov	učitel: to obtain | erlangen
+ཐོབ་པ་གསུམ	thob pa gsum	tři dosažení	dosažen	prov	učitel: three attainments | dreifaches Erlangen
+ཐོད་རྒལ	thod rgal	thögal	thögal	prov	učitel: Direct Crossing | Direktes Hinüberspringen; alt: přímé překročení
+ཐུགས	thugs	osvícená mysl	mysl	prov	učitel: citta, buddha mind | (Buddha-)Geist; dle glosáře bla ma'i thugs = osvícená mysl mistra
+ཐུགས་རྗེ	thugs rje	projev soucitu	projev	prov	učitel: compassionate expression | Mitgefühlsausdruck — in der Trias ngo ba, rang bzhin, thugs rje
+ཐུན	thun	rituální substance	substanc	prov	učitel: magic substance | Magiesubstanz; dle glosáře thun gyis = rituální substance, ne „thun“
+ཐུན་ཕུར	thun phur	magická kíla	kíl	prov	učitel: magical weapon kila | Magiewaffen-Kila
+ཏིང་འཛིན་སེམས་དཔའ	ting ‘dzin sems dpa’	bytost samádhi	bytost	prov	učitel: samādhi being | Samādhi-Wesen
+ཏིང་ངེ་འཛིན	ting nge 'dzin	samádhi	samádhi	prov	učitel: samādhi, deep absorption | tiefe Versenkung; alt: hluboké pohroužení
+ཚད་ལྡན	tshad ldan	kvalifikovaný	kvalifikovan	prov	učitel: competent, qualified | kompetent; alt: způsobilý
+ཚངས་བུག	tshangs bug	otvor na temeni	otvor	prov	učitel: brahma aperture | Scheitelöffnung; alt: brahmův otvor
+ཚེའི་བུམ	tshe'i bum	váza dlouhého života	váz	prov	učitel: longlife vase | Lebensvase
+ཚིག་གསུམ་གནད་དུ་རྡེག་པ	tshig gsum gnad du rdeg pa	zasažení jádra třemi výroky	zasažen	prov	učitel: striking the three statements to the crucial point | die drei Aussagen auf den Punkt bringen; alt: tři výroky zasahující podstatu
+ཚོགས	tshogs	ganačakra	ganačakr	prov	učitel: gaṇacakra, accumulation; feast offering | Ansammlung; Festopfer; alt: nahromadění; slavnostní obětina tsoku
+ཚོགས་བརྒྱད	tshogs brgyad	osmičlenná skupina [vědomí]	skupin	prov	učitel: the eightfold [consciousness] group | die Achter-[Bewusstseins-]Gruppe
+ཚོགས་དྲུག	tshogs drug	šestičlenná skupina [vědomí]	skupin	prov	učitel: the sixfold [consciousness] group | die Sechser-[Bewusstseins-]Gruppe
+ཚོར་བ	tshor ba	cítění	cítěn	prov	učitel: vedanā, feeling | Gefühl; alt: vedaná, pocit
+ཚུལ་ཁྲིམས	tshul khrims	etická disciplína	disciplín	prov	učitel: (ethical) discipline | (ethische) Disziplin; alt: mravní disciplína
+ཙིཏཏ་ཤའི་སྒྲོན་མ	tsitta sha'i sgron ma	lampa tělesné čitty	lamp	prov	učitel: lamp of the fleshly citta | Lampe des fleischlichen Chitta
+ཙོག་པུ	tsog pu	poloha v podřepu	poloh	prov	učitel: crouching position | Kauerstellung
+འུབ་ཆུབ	'ub chub	všeobjímající	všeobjímající	prov	učitel: all-encompassing | Allumfasstheit, allumfassend; alt: všeobjímavost
+འུར་ཆེམས	'ur chems	jako valící se hrom	hrom	prov	učitel: like rolling thunder | wie rollender Donner — scharfe und wiederholende Klänge
+ཡབ་ཡུམ	yab yum	otec s chotí	chot	prov	učitel: father-mother consorts | Gefährte-Gefährtin; alt: otec-matka, druh a družka
+ཡམ་ཤིང	yam shing	dřívka na oheň	dřív	prov	učitel: firewood sticks | Feuerstöckchen; alt (dup row): obětní dřívka
+ཡང་གསང	yang gsang	nejtajnější	nejtajnějš	prov	učitel: innermost secret | allergeheimsten; alt: nejvnitřnější tajemství
+ཡེ་ཤེས་པ	ye shes pa	aspekty moudrosti	aspekt	prov	učitel: wisdom aspects | Weisheitsaspekte — Plural!!!
+ཡེ་ཤེས་རྗེས་མཐུན	ye shes rjes mthun	odpovídající moudrost	moudrost	prov	učitel: concordant wisdom | übereinstimmende Weisheit; alt: souhlasná moudrost
+ཡེ་ཤེས་སེམས་དཔའ	ye shes sems dpa’	bytost moudrosti	bytost	prov	učitel: wisdom being | Weisheitswesen
+ཡེང་བ	yeng ba	rozptýlený	rozptýlen	prov	učitel: distracted | abgelenkt
+ཡི་དམ	yi dam	jidam	jidam	prov	učitel: iṣṭadevatā, meditation deity | Meditationsgottheit; alt: meditační božstvo
+ཡིད	yid	mysl	mysl	prov	učitel: manas, mental consciousness | Mentalgeist; alt: manas, mentální mysl
+ཡིད་ཆེས་ཀྱི་དད་པ	yid ches kyi dad pa	důvěra plného odevzdání	důvěr	prov	učitel: trust of complete entrustment | Vertrauen völliger Überantwortung
+ཡིད་དཔྱོད	yid dpyod	myšlenková analýza	analýz	prov	učitel: mental analysis | gedankliche Analyse; alt: rozumový rozbor
+ཡིད་ཀྱི་རྣམ་པར་ཤེས་པ	yid kyi rnam par shes pa	mentální vědomí	vědom	prov	učitel: mental consciousness | Mental(funktions)bewusstsein — manas, das was (geistige) Mentalobjekte über das mentale Bewusstsein erkennt
+ཡིག	yig	slabika	slabik	prov	učitel: syllable | Silbe
+ཡིན་ལུགས	yin lugs	způsob bytí	způsob	prov	učitel:  abiding nature | Seinszustand; alt: trvalá přirozenost
+ཡོ་ལངས	yo langs	trvání	trván	prov	učitel: continuity | Fortdauern; alt: pokračování
+ཡོན་མཆོད	yon mchod	dárce a příjemce	dárc	prov	učitel: patron and recipient | Förderer und Empfänger; alt: podporovatel a příjemce
+ཡོན་མཆོད་འཁོར་དང་བཅས་པ	yon mchod 'khor dang bcas pa	spolu s dárci, příjemci a jejich družinou	dárc	prov	učitel: together with patrons, recipients and retinue | zusammen mit den Gönnern, Empfängern und dem Umfeld
+ཡོངས་གྲུབ	yongs grub	plně uskutečněná [přirozenost]	uskuteč	prov	učitel: pariniṣpanna, fully established [nature] | völlig verwirklichte [Natur], völlig existente [Natur]; alt: plně ustavená [přirozenost]
+ཡོངས་གྱུར	yongs gyur	úplná přeměna	přemě	prov	učitel: complete transformation | vollständige Verwandlung
+ཟ་གསོད	za gsod	pohlcovači a vražednice	pohlcovač	prov	učitel: devourer and killer | Verschlinger und Mörderinnen
+ཟབ་གསང་མཁའ་འགྲོ་སྙིང་ཐིག་ལས	zab gsang mkha' 'gro snying thig las	Z hluboké tajné srdečné esence dákiní:	esenc	prov	učitel: From the Profound Secret Heart Essence of the Ḍākinīs: | Aus der tiefgründigen, geheimen Herzessenz der Ḍākinīs:
+ཟག་མེད	zag med	neposkvrněný	neposkvrněn	prov	učitel: undefiled | unbefleckt
+ཟང་ཐལ	zang thal	průzračná neomezenost	průzračn	open	učitel: transparent unimpededness | transparente Ungehindertheit; alt: průzračná ničím nerušená otevřenost
+ཞེ	zhe	mysl	mysl	prov	učitel: mind, mental state | Geist, Gemütslage; alt: rozpoložení mysli
+ཞི་གནས	zhi gnas	klidné setrvávání	setrváv	prov	učitel: calm abiding | Geistesruhe; alt: šamatha, utišení mysli
+ཞིང་བཅུ	zhing bcu	deset důvodů	důvod	prov	učitel: ten reasons | zehn Gründe — damit das Objekt der Visualisation (zornvoll) befreit werden darf
+ཞིང་ཁམས	zhing khams	buddhovská říše	říš	prov	učitel: buddhakṣetra, buddha realm | Buddha-Bereich
+ཞིང་སྐྱོང	zhing skyong	ochránce říše	ochránc	prov	učitel: realm protector | Gebietsschützer; dle glosáře dam can = ochránci vázaní přísahou
+ཞུ་བ	zhu ba	roztát	rozt	prov	učitel: to melt | auflösen; alt: rozpustit se
+མན་ངག	man ngag	přímé pokyny	pokyn	prov	učitel: direct instructions | direkte Anweisungen; alt: upadéša
+མཉམ་བཞག	mnyam bzhag	setrvávání v rovnováze	setrváv	prov	učitel: resting in equipoise | das ausgelichene Verweilen
+ལྟ་སྟངས	lta stangs	držení pohledu	držen	prov	učitel: gaze, way of looking | Blickhaltung, Blickführung — je nachdem, ob als Position oder Handlung; alt: vedení pohledu
+གེགས་བསལ	gegs bsal	odstranit překážky	odstran	prov	učitel: to clear hindrances | Hindernisse beseitigen
+ཀྱེ་ཧོ	kye ho	Kje ho!	kje ho	prov	učitel: Behold! | Oh Wunder!; alt: Hleďte!, Ó divy!
+པད་ཞབ༹	pad zhva	lotosový klobouk	klobouk	prov	učitel: lotus crown | Lotus-Hut; alt: lotosová korunka
+པད་ཞུ	pad zhu	lotosový klobouk	klobouk	prov	učitel: lotus crown | Lotus-Hut; alt: lotosová korunka
+ཕོད་ཀ	phod ka	svrchní roucho s dlouhými rukávy	rouch	prov	učitel: long-sleeved uper garment | langärmeliges Obergewand
+ཆོས་གོས	chos gos	roucha Dharmy	rouch	prov	učitel: Dharma robes | Dharma-Roben
+བེར	ber	plášť	plášt	prov	učitel: cloak | Umhang
+ཟ་བེར	za ber	plášť z brokátu	plášt	prov	učitel: brocade cloak | Brokatumhang; materiál předložkou, ne „brokátový plášť“
+མཁའ་སྤྱོད	mkha' spyod	Khečara	khečar	prov	učitel: Khecara, sky activity | Khecara, Himmelsaktivität; alt: nebeská aktivita
+འོག་མིན	'og min	Akaništha	akaništh	prov	učitel: Akaniṣhṭha | Akaniṣhṭha, Unübertroffener Bereich ; alt: Nepřekonatelná říše
+མཉམ་བརྡལ	mnyam brdal	rovnoměrně se rozprostřít	rozprost	prov	učitel: extend equally | ausgeglichen ausbreiten
+ཚོགས་ཕུད	tshogs phud	první díl obětiny tsoku	díl	open	učitel: sho | Ehren; anglické pole („sho“) je zkomolené; opírám se o DE „Ehren“
+ལྷག་མ	lhag ma	zbytky	zbytk	prov	učitel: remainder | Reste; dle glosáře lhag gtor = zbytková torma
+མཆད་མདོ	mchad mdo	čhadmo	čhadmo	prov	učitel: contract | Vertrag; dle glosáře chad mdo = čhadmo; alt: smlouva
+བརྟན་སྐྱོང	brtan skyong	udržování [obětiny] tenmám	udržov	prov	učitel: to maintain [the offering] to the Tenmas  | Aufrechterhalten [der Darbringung] an die Tenmas; dle glosáře brtan ma = tenma
+བཤལ་ཆུ	bshal chu	voda na omytí	vod	prov	učitel: washing water | Waschwasser
+བོད་ཁམས	bod khams	Střední Tibet a Kham	tibet	prov	učitel: Central Tibet and Kham, Greater Tibet | Zentraltibet und Kham, Großtibet; alt: Velký Tibet
+དགེ་རྩ	dge rtsa	kořeny ctnosti	kořen	prov	učitel: roots of virtue | Wurzeln des Heilsamen; alt: kořeny dobrého
+གང་ཆེན་མཙོ	gang chen mtso	Nesmírný oceán	oceán	prov	učitel: Immense Ocean | Riesiger Ozean  — Eigenname für eine Klassifikation des Sambhogakayas
+པདམ་འབྱུང་གནས	padma 'byung gnas	Padmasambhava	padmasambhav	prov	učitel: Lotus born, Padmasambhava  | Lotusgeborener, Padmasambhava ; alt: Lotosem zrozený
+གཏོར་མ	gtor ma	torma	torm	prov	učitel: torma | Torma — ich verende das tibetische Wort unübersetzt; dle glosáře; nepřekládat

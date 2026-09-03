@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-"""Mechanické kroky workflow lotsawa: segmentace, porovnání draftů, montáž, lint.
+"""Mechanical steps of the lotsawa workflow: segmentation, draft comparison, assembly, lint.
 
 Usage:
   lotsawa.py segment original.md -o drafts/source.md [--delim auto|terma|shad]
   lotsawa.py compare --source drafts/source.md --draft F=a.md[,b.md] --draft C=c.md
                      [-o drafts/review.md] [--ratio 0.4]
   lotsawa.py build --source drafts/source.md --base drafts/fable-tib.md [--base ...]
-                   [--reuse ../] [--pho drafts/pho_done.txt] [--mantra drafts/mantra_done.txt]
+                   [--pho drafts/pho_done.txt] [--mantra drafts/mantra_done.txt]
                    [--overrides drafts/overrides.json] [--front f.txt] [--back b.txt]
-                   -o text.md [--dry-run] [--allow-gaps]
+                   -o text.md [--dry-run] [--allow-gaps] [--pho-lint]
+                   # optional: [--reuse ../]  (sibling texts in the working folder)
   lotsawa.py check text.md [--source drafts/source.md] [--original original.md]
-  lotsawa.py concord <tibetský termín> [--root ...] [--translated-only|--originals-only]
-  lotsawa.py glossary --corpus "<dir s texty>" [--prompt | --check]
-  lotsawa.py pho --source drafts/source.md -o drafts/pho_done.txt
+                   [--glossary TSV] [--max-ratio N]
+  lotsawa.py glossary [--file TSV] [--prompt | --check --corpus DIR]
   lotsawa.py meter text.md [--max-ratio 4.56]
-  lotsawa.py czech text.md > drafts/czech.txt
+  lotsawa.py target text.md > drafts/target.txt   (alias: czech)
   lotsawa.py selftest
 
-Ztráta nebo poškození dat je fatální (exit 1); redakční soud je varování (exit 0).
-Chybějící fonetika je stav, ne chyba: build zapíše *_todo.txt a skončí s exit 2.
+Data loss or corruption is fatal (exit 1); an editorial judgment call is a warning
+(exit 0). Missing phonetics is a state, not an error: build writes *_todo.txt and
+exits with 2.
 Stdlib only.
 """
 import argparse
@@ -33,7 +34,7 @@ from pathlib import Path
 TIB = 'ༀ-࿿'
 TIB_RE = re.compile(f'[{TIB}]')
 PUNCT_ONLY_RE = re.compile(f'^[་།༎༈༔༄༅༃\\s]+$')
-SANSKRIT_MARKS = 'ཾཿཱྃྂ'          # ཾ ཿ ྃ ྂ ཱ
+SANSKRIT_MARKS = 'ཾཿཱྃྂ'          # ཾ ཿ ྃ ྂ ཱ
 SANSKRIT_SUBJOINED = 'ྵྡྞྚྷ'      # ྵ ྜ ྞ ྚ ྷ
 PROSE_MARKERS = ('ཞེས', 'ཅེས', 'སོགས',
                  'བྱའོ')               # ཞེས ཅེས སོགས བྱའོ
@@ -65,22 +66,23 @@ def finish(sub, exit_on_error=True):
 # ---------------------------------------------------------------- shared core
 
 def norm_tib(s):
-    """Pro rekonstrukční srovnání: zahazuje jen whitespace, nic jiného."""
+    """For reconstruction comparison: drops only whitespace, nothing else."""
     return re.sub(r'\s+', '', s)
 
 
-# Ortografické varianty téhož slova napříč zdroji. Doloženo na Sedmiřádkové
-# modlitbě: vzorové brožury píší ཡུལ་གི a ཞེས་སུ་གགས, náš zdroj ཡུལ་གྱི a ཞེས་སུ་གྲགས,
-# a slabika HUNG nese ྂ / ྃ / ཾ podle sazby. Folduje se JEN klíč banky — překlad,
-# fonetika ani rekonstrukční kontrola (norm_tib) se nemění.
+# Orthographic variants of the same word across sources. Documented on the Seven-Line
+# Prayer: published Czech translations write ཡུལ་གི and ཞེས་སུ་གགས, our source ཡུལ་གྱི and
+# ཞེས་སུ་གྲགས, and the HUNG syllable carries ྂ / ྃ / ཾ depending on the typesetting.
+# Only the bank key is folded — the translation, the phonetics, and the reconstruction
+# check (norm_tib) never change.
 KEY_EQUIV = [('གྱི', 'གི'), ('གྲགས', 'གགས'), ('ྂ', 'ྃ'), ('ཾ', 'ྃ'), ('ཿ', '')]
 
 
 def key_tib(s):
-    """Klíč banky tripletů: bez interpunkce a tsheg, aby སྟེང་༔ == སྟེང༔.
+    """Triplet-bank key: strips punctuation and tsheg, so སྟེང་༔ == སྟེང༔.
 
-    Navíc srovnává ortografické varianty z KEY_EQUIV, jinak se týž verš ze dvou
-    brožur nepotká.
+    Also normalizes the orthographic variants from KEY_EQUIV, otherwise the same
+    verse from two booklets never matches.
     """
     s = re.sub(f'[\\s{TSHEG}{SHAD}{NYIS_SHAD}{SBRUL_SHAD}{TERMA_SHAD}༄༅༃]', '', s)
     for a, b in KEY_EQUIV:
@@ -88,15 +90,15 @@ def key_tib(s):
     return s
 
 
-VISARGA = 'ཿ'          # rnam bcad — ukončuje slabiku i bez tsheg (ཨཱཿཧཱུྃ = 2 slabiky)
+VISARGA = 'ཿ'          # rnam bcad — ends a syllable even without tsheg (ཨཱཿཧཱུྃ = 2 syllables)
 
 
 def syl(s):
-    """Počet slabik: tsheg + 1 po odstranění interpunkce (0 pro netibetský text).
+    """Syllable count: tsheg + 1 after stripping punctuation (0 for non-Tibetan text).
 
-    `ཿ` se počítá jako dělítko: bez toho je ཨཱཿཧཱུྃ jedna slabika, počty vyjdou
-    o jednu nižší a zarovnání fonetiky se tiše posune (v mantře Vadžraguru
-    ཨོཾ་ཨཱཿཧཱུྃ་བཛྲ… to posunulo celý zbytek řádku).
+    `ཿ` counts as a divider: without this, ཨཱཿཧཱུྃ is one syllable, counts come out one
+    too low, and the phonetics alignment silently shifts (in the Vajraguru mantra
+    ཨོཾ་ཨཱཿཧཱུྃ་བཛྲ… this shifted the rest of the line).
     """
     core = re.sub(f'[^{TIB}]', '', s)
     core = re.sub(f'[{SHAD}{NYIS_SHAD}{SBRUL_SHAD}{TERMA_SHAD}༄༅༃]', '', core)
@@ -117,18 +119,18 @@ def is_punct_only(s):
 
 
 def pho_tokens(line):
-    return [t for t in re.split(r'[^\wáéíóúýčďě'
-                               r'ňřšťůžüö]+', line.lower()) if t]
+    return [t for t in re.split(r'\W+', line.lower()) if t]
 
 
 def looks_like_pho(line):
-    """Fonetický řádek: jednotné psaní (VERZÁLKY dle vzorů, nebo minusky u starých
-    textů) a bez věcné interpunkce.
+    """Phonetics line: uniform casing (UPPERCASE per published Czech translations, or
+    lowercase in older ones) and no sentence-level punctuation.
 
-    Vzorové texty píšou fonetiku verzálkami, starší výstupy skillu minuskami — obojí
-    musí projít, jinak přestane fungovat vše, co na tomhle predikátu stojí
-    (czech_lines, verse_triplets, banka, meter, check). Odmítá se jen věta, tj. řádek
-    s malými i velkými písmeny zároveň, jak ho píše česká próza.
+    Published Czech translations write phonetics in uppercase, older skill output in lowercase —
+    both must pass, otherwise everything resting on this predicate breaks
+    (target_lines, verse_triplets, the bank, meter, check). Only a sentence is
+    rejected, i.e. a line mixing upper- and lowercase the way target-language prose
+    does.
     """
     s = line.strip()
     if not s:
@@ -143,10 +145,10 @@ def looks_like_pho(line):
 
 
 def fold(s):
-    """Bez diakritiky a malými písmeny — pro srovnávání českých kořenů.
+    """Diacritic-stripped and lowercase — for comparing target-language word stems.
 
-    Čeština palatalizuje (pohřebiště → pohřebišť), takže kořen „pohřebišt" by
-    inflektovaný tvar nenašel; po fold() se oba shodnou na „pohrebist".
+    Czech palatalizes (pohřebiště → pohřebišť), so the stem "pohřebišt" would not
+    match the inflected form; after fold() both agree on "pohrebist".
     """
     nfd = unicodedata.normalize('NFD', s.lower())
     return ''.join(ch for ch in nfd if not unicodedata.combining(ch))
@@ -159,17 +161,19 @@ def looks_like_iast(line):
     return any(ch in IAST_CHARS for ch in line) or ' | ' in line
 
 
-def czech_lines(lines, i):
-    """Všechny české řádky jednotky, která začíná tibetským řádkem na indexu i.
+def target_lines(lines, i):
+    """All target-language lines of the unit starting with the Tibetan line at index i.
 
-    Vrací [] pro mantru (druhý řádek je fonetika, ne čeština). Vrací víc řádků
-    u titulních bloků (titul + autor) a u rubrik s víceřádkovým překladem — hledat
-    termín se musí ve všech, jinak vznikají falešné nálezy.
+    Returns [] for a mantra (the second line is phonetics, not target-language text).
+    Returns more than one line for title blocks (title + author) and for rubrics with
+    a multi-line translation — a term search must cover all of them, otherwise it
+    misses matches.
 
-    Fonetika se pozná **pozicí v bloku, ne stylem řádku**: stojí hned za tibetštinou.
-    Stylový test na ni nestačí — `looks_like_pho` bere za fonetiku i český verš bez
-    interpunkce psaný malými písmeny („kéž se jejich klam rozplyne"), takže filtr přes
-    celý blok takové verše tiše zahazoval a kontrola glosáře je nikdy neviděla.
+    Phonetics is recognized **by position in the block, not by line style**: it sits
+    right after the Tibetan. A style-only test isn't enough — `looks_like_pho` also
+    treats an unpunctuated lowercase target-language verse ("kéž se jejich klam
+    rozplyne") as phonetics, so a style filter over the whole block used to silently
+    drop such verses, and the glossary check never saw them.
     """
     unit = []
     for l in lines[i + 1:i + 5]:
@@ -180,9 +184,9 @@ def czech_lines(lines, i):
         return []
     if unit and looks_like_pho(unit[0]):
         if len(unit) > 1:
-            unit = unit[1:]                # verš/titul: fonetika (nebo titul) je první
+            unit = unit[1:]                # verse/title: phonetics (or title) comes first
         elif unit[0].strip() == unit[0].strip().upper():
-            return []                      # mantra: tibetština + fonetika VERZÁLKAMI
+            return []                      # mantra: Tibetan + phonetics in UPPERCASE
     return unit
 
 
@@ -212,7 +216,7 @@ def parse_source(path):
 
 
 def parse_draft(path):
-    """Tolerantní parser: hlavička, pak všechny neprázdné řádky slité mezerou."""
+    """Tolerant parser: a header, then all non-blank lines joined with a space."""
     out = {}
     cur, buf = None, []
     for line in Path(path).read_text(encoding='utf-8').splitlines():
@@ -233,7 +237,7 @@ def merge_drafts(paths):
     for p in paths:
         for num, txt in parse_draft(p).items():
             if num in merged:
-                err('compare', f'segment {num} je ve dvou dílech ({origin[num]}, {p})')
+                err('compare', f'segment {num} appears in two drafts ({origin[num]}, {p})')
             merged[num] = txt
             origin[num] = p
     return merged
@@ -242,14 +246,14 @@ def merge_drafts(paths):
 # --------------------------------------------------------------- 1. segment
 
 def split_units(text, mode):
-    """Rozdělí na jednotky. Interpunkce patří k předchozí jednotce, ༈ k následující."""
+    """Splits into units. Punctuation belongs to the preceding unit, ༈ to the following one."""
     if mode == 'terma':
         pat = f'(?<=[{TERMA_SHAD}])'
     else:
-        # hranice je za celým během shadů (`། །`, `།།`, `༎`) včetně mezer v něm
+        # the boundary is after a whole run of shads (`། །`, `།།`, `༎`), including any spaces in it
         pat = f'(?<=[{SHAD}{NYIS_SHAD}])(?![\\s]*[{SHAD}{NYIS_SHAD}])'
     parts = [p for p in re.split(pat, text) if p.strip()]
-    # ༈ a ༄ zahajují novou jednotku
+    # ༈ and ༄ start a new unit
     out = []
     for p in parts:
         pieces = re.split(f'(?=[{SBRUL_SHAD}༄])', p)
@@ -258,7 +262,7 @@ def split_units(text, mode):
 
 
 def merge_bare(units):
-    """Jednotka bez tibetské litery se slévá do předchozí; úvodní ༄༅། ། do následující."""
+    """A unit without a Tibetan letter merges into the previous one; a leading ༄༅། ། merges into the next."""
     merged, pending = [], ''
     for u in units:
         bare = re.sub(f'[{SHAD}{NYIS_SHAD}{SBRUL_SHAD}{TERMA_SHAD}༄༅༃{TSHEG}\\s]', '', u)
@@ -270,13 +274,13 @@ def merge_bare(units):
         else:
             merged.append(pending + u)
             pending = ''
-    if pending:                      # celý text bez jediné tibetské litery
+    if pending:                      # the whole text has not a single Tibetan letter
         merged.append(pending)
     return [u.strip() for u in merged if u.strip()]
 
 
 def split_intro(unit):
-    """Druhý průchod na dlouhý blok bez ༔: verše po shadech, próza slitá."""
+    """Second pass over a long block without ༔: verses split on shads, prose merged."""
     pieces = [p for p in re.split(f'(?<=[{SHAD}{NYIS_SHAD}])(?![{SHAD}{NYIS_SHAD}\\s])', unit)
               if p.strip()]
     typed = []
@@ -289,7 +293,7 @@ def split_intro(unit):
                     and SHAD not in inner
                     and not any(mk in s for mk in PROSE_MARKERS))
         typed.append(('verse' if is_verse else 'prose', s))
-    # slij sousedící prózu; verše nikdy
+    # merge adjacent prose; verses never
     out = []
     for kind, s in typed:
         if kind == 'prose' and out and out[-1][0] == 'prose':
@@ -310,14 +314,14 @@ def classify(unit, first, last):
     if last:
         if unit.lstrip().startswith(('ཅེས', 'ཞེས')):  # ཅེས ཞེས
             return 'colophon', False
-        warn('segment', f'poslední jednotka nezačíná ཅེས/ཞེས — typuji jako rubric, ne colophon')
+        warn('segment', f'last unit does not start with ཅེས/ཞེས — typing it as rubric, not colophon')
     inner = re.sub(f'[{SHAD}{NYIS_SHAD}\\s]+$', '', unit)
     if SHAD in inner:
         return 'rubric', False
     if n <= 9:
         return 'verse', False
     if n <= 14:
-        return 'verse', True          # šedá zóna
+        return 'verse', True          # gray zone
     return 'rubric', False
 
 
@@ -333,7 +337,7 @@ def cmd_segment(args):
         needs_split = mode == 'terma' and (TERMA_SHAD not in u or syl(u) > 40)
         if needs_split and syl(u) > 11:
             pieces = split_intro(u)
-            # slij interpunkční zbytky (osamocené ༄༅། ། mezi titulem a tělem)
+            # merge punctuation remnants (a lone ༄༅། ། between the title and the body)
             kinds = {key_tib(p): k for k, p in pieces}
             for piece in merge_bare([p for _, p in pieces]):
                 expanded.append((piece, kinds.get(key_tib(piece)) == 'verse'))
@@ -342,7 +346,7 @@ def cmd_segment(args):
 
     segs, uncertain = [], []
     for i, (u, forced_verse) in enumerate(expanded):
-        # tib: je jednořádkové pole — vnitřní zlomy by se při zápisu ztratily
+        # tib: is a single-line field — internal breaks would be lost on write
         u = re.sub(r'\s+', ' ', u).strip()
         first, last = i == 0, i == len(expanded) - 1
         if forced_verse is True:
@@ -355,28 +359,28 @@ def cmd_segment(args):
         if unc:
             uncertain.append(len(segs))
 
-    # --- fatální invarianty
+    # --- fatal invariants
     recon = norm_tib(''.join(s.tib for s in segs))
     if recon != norm_tib(original):
         a, b = norm_tib(original), recon
         off = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
-        err('segment', f'rekonstrukce selhala na offsetu {off}\n'
-                       f'  originál: …{a[max(0,off-40):off+40]}…\n'
-                       f'  segmenty: …{b[max(0,off-40):off+40]}…')
+        err('segment', f'reconstruction failed at offset {off}\n'
+                       f'  original: …{a[max(0,off-40):off+40]}…\n'
+                       f'  segments: …{b[max(0,off-40):off+40]}…')
     for s in segs:
         if not s.tib.strip():
-            err('segment', f'segment {s.num} je prázdný')
+            err('segment', f'segment {s.num} is empty')
         if is_punct_only(s.tib):
-            err('segment', f'segment {s.num} obsahuje jen interpunkci: {s.tib!r}')
+            err('segment', f'segment {s.num} contains only punctuation: {s.tib!r}')
     if _err:
         finish('segment')
 
     if uncertain:
-        warn('segment', f'nejistý typ (šedá zóna 10–14 slabik) u segmentů: '
+        warn('segment', f'uncertain type (gray zone 10–14 syllables) for segments: '
                         f'{", ".join(map(str, uncertain))}')
 
-    note = args.note or f'auto-segmentace ({mode} režim), typy heuristické'
-    lines = [f'# source — {note}', f'# {len(segs)} segmentů; sufix ? = nejistý typ', '']
+    note = args.note or f'auto-segmentation ({mode} mode), types are heuristic'
+    lines = [f'# source — {note}', f'# {len(segs)} segments; suffix ? = uncertain type', '']
     for s in segs:
         lines.append(f'## {s.num} [{s.type}{"?" if s.uncertain else ""}]')
         lines.append(f'tib: {s.tib}')
@@ -384,7 +388,7 @@ def cmd_segment(args):
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text('\n'.join(lines), encoding='utf-8')
     counts = Counter(s.type for s in segs)
-    print(f'{args.out}: {len(segs)} segmentů ({mode}) — '
+    print(f'{args.out}: {len(segs)} segments ({mode}) — '
           + ', '.join(f'{k} {v}' for k, v in sorted(counts.items())))
     return finish('segment')
 
@@ -393,7 +397,7 @@ def cmd_segment(args):
 
 def cmd_compare(args):
     src = parse_source(args.source)
-    # dělené běhy: --draft F=a.md --draft F=b.md (čárka nelze, názvy složek ji obsahují)
+    # split runs: --draft F=a.md --draft F=b.md (a comma won't do — folder names contain them)
     by_label = {}
     for spec in args.draft:
         label, _, path = spec.partition('=')
@@ -401,28 +405,28 @@ def cmd_compare(args):
     drafts = {label: merge_drafts(paths) for label, paths in by_label.items()}
 
     out = ['# compare']
-    out.append('## pokrytí')
+    out.append('## coverage')
     for label, d in drafts.items():
         missing = sorted(set(src) - set(d), key=lambda x: float(x))
         extra = sorted(set(d) - set(src), key=lambda x: float(x))
-        status = 'ok' if not missing and not extra else 'CHYBA'
+        status = 'ok' if not missing and not extra else 'ERROR'
         out.append(f'{label} {len(d)}/{len(src)} {status}')
         if missing:
-            err('compare', f'{label}: chybí segmenty {missing[:20]}')
+            err('compare', f'{label}: missing segments {missing[:20]}')
         if extra:
-            err('compare', f'{label}: přebývají segmenty {extra[:20]}')
+            err('compare', f'{label}: extra segments {extra[:20]}')
 
-    out.append('## kontaminace tibetskou interpunkcí v českém řádku')
+    out.append('## contamination with Tibetan punctuation in a target-language line')
     contam = {}
     for label, d in drafts.items():
         bad = [n for n, t in d.items() if has_tib(t)]
         contam[label] = len(bad) / max(len(d), 1)
-        flag = '  -- NEPOUŽÍVAT JAKO ZÁKLAD' if contam[label] >= 0.10 else ''
-        out.append(f'{label} {len(bad)}/{len(d)} segmentů ({contam[label]:.0%}){flag}')
+        flag = '  -- DO NOT USE AS BASE' if contam[label] >= 0.10 else ''
+        out.append(f'{label} {len(bad)}/{len(d)} segments ({contam[label]:.0%}){flag}')
         if bad:
-            warn('compare', f'{label}: tibetská interpunkce v {len(bad)} českých řádcích')
+            warn('compare', f'{label}: Tibetan punctuation in {len(bad)} target-language lines')
     base = min(contam, key=lambda k: contam[k]) if contam else '?'
-    out.insert(1, f'base doporučen: {base}')
+    out.insert(1, f'base recommended: {base}')
 
     labels = list(drafts)
     if len(labels) >= 2:
@@ -436,7 +440,7 @@ def cmd_compare(args):
             r = difflib.SequenceMatcher(None, norm(ta), norm(tb)).ratio()
             if r < args.ratio:
                 low.append((n, r, ta, tb))
-        out.append(f'## k revizi (ratio < {args.ratio:.2f})   {len(low)} segmentů')
+        out.append(f'## needs review (ratio < {args.ratio:.2f})   {len(low)} segments')
         for n, r, ta, tb in low:
             out.append(f'{n}  {r:.2f}  [{src[n].type}] {src[n].tib[:60]}')
             out.append(f'  {a}: {ta[:200]}')
@@ -444,15 +448,15 @@ def cmd_compare(args):
         disputed = sorted({n for n in src
                            if (drafts[a].get(n, '').strip() == '—')
                            != (drafts[b].get(n, '').strip() == '—')}, key=lambda x: float(x))
-        out.append('## sporné mantry (jeden draft dal —, druhý překlad)   '
-                   + (' '.join(disputed) if disputed else '(žádné)'))
+        out.append('## disputed mantras (one draft gave —, the other a translation)   '
+                   + (' '.join(disputed) if disputed else '(none)'))
         if disputed:
-            warn('compare', f'sporné mantry: {" ".join(disputed)}')
+            warn('compare', f'disputed mantras: {" ".join(disputed)}')
 
     text = '\n'.join(out) + '\n'
     if args.out:
         Path(args.out).write_text(text, encoding='utf-8')
-        print(f'{args.out}: base={base}, k revizi {len(low) if len(labels)>=2 else 0}')
+        print(f'{args.out}: base={base}, needs review {len(low) if len(labels)>=2 else 0}')
     else:
         print(text)
     return finish('compare')
@@ -461,7 +465,7 @@ def cmd_compare(args):
 # ----------------------------------------------------------------- 3. build
 
 def front_matter_end(lines):
-    """Index za titulním blokem: první běh ≥ 5 prázdných řádků + následující titul."""
+    """Index past the title block: first run of ≥ 5 blank lines + the following title."""
     blanks = 0
     for i, l in enumerate(lines):
         blanks = blanks + 1 if not l.strip() else 0
@@ -471,11 +475,11 @@ def front_matter_end(lines):
 
 
 def load_bank(reuse_dir, exclude_dir=None):
-    """key_tib(tib) -> (pho|None, cz) ze všech sourozeneckých text.md (bez titulního bloku).
+    """key_tib(tib) -> (pho|None, target) from all sibling text.md files (title block excluded).
 
-    `exclude_dir` vynechá jednu složku — typicky tu, do které se právě staví. Bez toho
-    čte druhý build vlastní předchozí výstup a banka (která má přednost před --pho
-    i --base) tiše zahodí opravu fonetiky nebo základu.
+    `exclude_dir` skips one folder — typically the one currently being built. Without
+    this, a second build reads its own previous output, and the bank (which takes
+    precedence over both --pho and --base) silently discards a phonetics or base fix.
     """
     variants = {}
     excl = Path(exclude_dir).resolve() if exclude_dir else None
@@ -502,12 +506,12 @@ def load_bank(reuse_dir, exclude_dir=None):
     for k, vs in variants.items():
         if not vs:
             continue
-        czs = Counter(v[1] for v in vs)
-        if len(czs) > 1:
-            warn('build', f'banka: různé překlady téhož řádku — {list(czs)[:2]}')
-        best_cz = czs.most_common(1)[0][0]
-        pho = next((v[0] for v in vs if v[0] and v[1] == best_cz), None)
-        bank[k] = (pho, best_cz)
+        targets = Counter(v[1] for v in vs)
+        if len(targets) > 1:
+            warn('build', f'bank: different translations of the same line — {list(targets)[:2]}')
+        best = targets.most_common(1)[0][0]
+        pho = next((v[0] for v in vs if v[0] and v[1] == best), None)
+        bank[k] = (pho, best)
     return bank
 
 
@@ -520,7 +524,7 @@ def load_tsv(path, cols=1):
             continue
         parts = raw.rstrip('\n').split('\t')
         if len(parts) < cols + 1:
-            err('build', f'{path}: řádek nemá {cols + 1} polí: {raw[:60]!r}')
+            err('build', f'{path}: line does not have {cols + 1} fields: {raw[:60]!r}')
             continue
         if cols == 1:
             out[parts[0]] = parts[1]
@@ -529,17 +533,24 @@ def load_tsv(path, cols=1):
     return out
 
 
-def lint_pho(num, seg_type, pho):
-    """Kontroly podle konvence vzorových textů (viz phonetics.md)."""
+def lint_pho(num, seg_type, pho, pho_lint=False):
+    """Checks against the published-Czech-translations convention (see phonetics.md).
+
+    Uppercase is a format requirement and always applies; the rest (length marks,
+    PHET, TSH/CCH) are conventions of the specific (Czech) phonetics.md, so they only
+    run behind --pho-lint.
+    """
     letters = [ch for ch in pho if ch.isalpha()]
     if letters and any(ch.islower() for ch in letters):
-        warn('build', f'seg {num}: fonetika se píše VERZÁLKAMI: {pho[:40]}')
+        warn('build', f'seg {num}: phonetics must be UPPERCASE: {pho[:40]}')
+    if not pho_lint:
+        return
     if re.search(r'[áéíóúůý]', pho, re.I):
-        warn('build', f'seg {num}: fonetika nenese délky (jen Ä Ö Ü): {pho[:40]}')
+        warn('build', f'seg {num}: phonetics must carry no length marks (only Ä Ö Ü): {pho[:40]}')
     if re.search(r'\bPHE\b', pho, re.I):
-        warn('build', f'seg {num}: ཕཊ se přepisuje PHET, ne PHE')
+        warn('build', f'seg {num}: ཕཊ must be transcribed PHET, not PHE')
     if re.search(r'\bCCH', pho, re.I):
-        warn('build', f'seg {num}: sykavka se píše TSH, ne CCH: {pho[:40]}')
+        warn('build', f'seg {num}: the sibilant must be written TSH, not CCH: {pho[:40]}')
 
 
 def token_check(new_pho_lines, bank):
@@ -555,8 +566,8 @@ def token_check(new_pho_lines, bank):
             near = [c for c in difflib.get_close_matches(tok, known, n=3, cutoff=0.85)
                     if corpus[c] >= 3]
             if near:
-                warn('build', f'seg {num}: „{tok}" (nové) vs '
-                              + ', '.join(f'„{c}" ({corpus[c]}×)' for c in near))
+                warn('build', f'seg {num}: "{tok}" (new) vs '
+                              + ', '.join(f'"{c}" ({corpus[c]}×)' for c in near))
 
 
 def cmd_build(args):
@@ -564,20 +575,12 @@ def cmd_build(args):
     base = merge_drafts(args.base)
     own = Path(args.out).resolve().parent if args.out else None
     bank = load_bank(args.reuse, exclude_dir=own) if args.reuse else {}
-    if args.reuse_bank:                      # triplety ze vzorových textů
-        for line in Path(args.reuse_bank).read_text(encoding='utf-8').splitlines():
-            if line.startswith('#') or not line.strip():
-                continue
-            f = line.split('\t')
-            if len(f) >= 3:
-                bank.setdefault(f[0], (f[1], f[2]))
-    lex = load_lexicon(args.lexicon) if args.lexicon else {}
     pho = load_tsv(args.pho)
     mantra = load_tsv(args.mantra, cols=2)
     overrides = json.loads(Path(args.overrides).read_text(encoding='utf-8')) if args.overrides else {}
 
-    # rozklad segmentů dle overrides na podjednotky
-    units = []      # (id, type, tib, cz_or_None)
+    # split segments into sub-units per overrides
+    units = []      # (id, type, tib, target_or_None)
     for num in sorted(src, key=lambda x: float(x)):
         seg = src[num]
         if num in overrides:
@@ -585,7 +588,7 @@ def cmd_build(args):
                 units.append((f'{num}.{j}', t, tib, cz))
             covered = norm_tib(''.join(x[1] for x in overrides[num]))
             if covered != norm_tib(seg.tib):
-                err('build', f'override segmentu {num} nepokrývá celý tibetský obsah')
+                err('build', f'override of segment {num} does not cover the whole Tibetan content')
         else:
             units.append((num, seg.type, seg.tib, None))
 
@@ -593,19 +596,15 @@ def cmd_build(args):
     for uid, t, tib, cz_override in units:
         key = key_tib(tib)
         if t == 'mantra':
-            # Vzory mají mantru o DVOU řádcích (tibetština + fonetika), bez IAST.
+            # Published Czech translations have a TWO-line mantra (Tibetan + phonetics), no IAST.
             m = mantra.get(uid)
             pho_m = (m or {}).get('pho')
             if not pho_m and key in bank and bank[key][0]:
                 pho_m = bank[key][0]; prov['bank'] += 1
-            elif not pho_m and lex:
-                cand, unknown = render_pho(tib, lex)
-                if not unknown:
-                    pho_m = cand; prov['lexikon'] += 1
             elif pho_m:
                 prov['mantra_done'] += 1
             if pho_m:
-                lint_pho(uid, t, pho_m)
+                lint_pho(uid, t, pho_m, args.pho_lint)
                 out.append((tib, None, pho_m))
             else:
                 missing_mantra.append((uid, tib))
@@ -613,17 +612,13 @@ def cmd_build(args):
             continue
         cz = cz_override or (bank[key][1] if key in bank else base.get(uid, ''))
         if not cz:
-            err('build', f'segment {uid} nemá překlad v žádném draftu')
+            err('build', f'segment {uid} has no translation in any draft')
             cz = 'PHO?'
         cz = re.sub(f'[{TIB}]+', '', cz).strip() if has_tib(cz) else cz
         if t in ('verse',):
             p = (bank[key][0] if key in bank and bank[key][0] else pho.get(uid))
-            if not p and lex:
-                cand, unknown = render_pho(tib, lex)
-                if not unknown:
-                    p = cand; prov['lexikon'] += 1
             if p:
-                lint_pho(uid, t, p)
+                lint_pho(uid, t, p, args.pho_lint)
                 if uid in pho:
                     new_pho.append((uid, p))
                 out.append((tib, p, cz)); prov['bank' if key in bank else 'pho_done'] += 1
@@ -644,26 +639,26 @@ def cmd_build(args):
         if missing_mantra:
             (d / 'mantra_todo.txt').write_text(
                 ''.join(f'{n}\t{t}\n' for n, t in missing_mantra), encoding='utf-8')
-        print(f'chybí fonetika: {len(missing_pho)} veršů, {len(missing_mantra)} manter '
+        print(f'missing phonetics: {len(missing_pho)} verses, {len(missing_mantra)} mantras '
               f'→ {d}/pho_todo.txt, mantra_todo.txt', file=sys.stderr)
         finish('build', exit_on_error=False)
         sys.exit(2)
 
-    # --- fatální invarianty
+    # --- fatal invariants
     seen = {uid.split('.')[0] for uid, *_ in units}
     for num in src:
         if num not in seen:
-            err('build', f'segment {num} nepřispěl do výstupu')
+            err('build', f'segment {num} did not contribute to the output')
     recon = norm_tib(''.join(u[0] for u in out))
     if recon != norm_tib(''.join(src[n].tib for n in sorted(src, key=lambda x: float(x)))):
-        err('build', 'rekonstrukce source ↔ výstup selhala')
+        err('build', 'source ↔ output reconstruction failed')
     for tib, p, cz in out:
         for line in (p, cz):
             if line and has_tib(line):
-                err('build', f'tibetský znak v netibetském řádku: {line[:50]!r}')
+                err('build', f'Tibetan character in a non-Tibetan line: {line[:50]!r}')
 
     if args.dry_run:
-        print('provenience: ' + ', '.join(f'{k} {v}' for k, v in sorted(prov.items())))
+        print('provenance: ' + ', '.join(f'{k} {v}' for k, v in sorted(prov.items())))
         return finish('build')
 
     body = []
@@ -679,15 +674,15 @@ def cmd_build(args):
     if args.back:
         body.append(Path(args.back).read_text(encoding='utf-8').rstrip('\n'))
     Path(args.out).write_text('\n'.join(body) + '\n', encoding='utf-8')
-    print(f'{args.out}: {len(out)} jednotek — '
+    print(f'{args.out}: {len(out)} units — '
           + ', '.join(f'{k} {v}' for k, v in sorted(prov.items())))
     return finish('build')
 
 
-# ------------------------------------------------------------- 4. concord
+# ------------------------------------------------- 4. corpus helpers (working folder)
 
 def iter_texts(root, pattern):
-    """Texty v jakékoli hloubce pod root (pattern s `**`); label = složka textu."""
+    """Texts at any depth under root (pattern with `**`); label = the text's folder."""
     for p in sorted(Path(root).glob(pattern)):
         parts = p.relative_to(root).parts
         cycle = parts[0] if len(parts) > 1 else '.'
@@ -695,137 +690,21 @@ def iter_texts(root, pattern):
         yield cycle, text, p
 
 
-def cmd_concord(args):
-    root = Path(args.root)
-    term = args.term
-    tkey = key_tib(term)
-    total = 0
-
-    if not args.originals_only:
-        print(f'=== hotové překlady (jak už bylo přeloženo)')
-        for cycle, text, p in iter_texts(root, '**/text.md'):
-            lines = p.read_text(encoding='utf-8').split('\n')
-            shown = 0
-            for i, l in enumerate(lines):
-                if not has_tib(l) or tkey not in key_tib(l):
-                    continue
-                if shown >= args.max:
-                    break
-                cz = next((x for x in lines[i + 1:i + 3]
-                           if x.strip() and not has_tib(x) and not looks_like_pho(x)), '')
-                print(f'  [{cycle} / {text[:44]}]')
-                print(f'    tib: {l.strip()[:120]}')
-                if cz:
-                    print(f'    cz : {cz.strip()[:120]}')
-                shown += 1
-                total += 1
-
-    if not args.translated_only:
-        print(f'=== originály (kontext ±{args.context})')
-        for cycle, text, p in iter_texts(root, '**/original.md'):
-            body = p.read_text(encoding='utf-8')
-            hits = [m.start() for m in re.finditer(re.escape(term), body)]
-            if not hits:
-                continue
-            print(f'  [{cycle} / {text[:44]}]  {len(hits)}×')
-            for off in hits[:args.max]:
-                a = max(0, off - args.context)
-                b = min(len(body), off + len(term) + args.context)
-                snip = re.sub(r'\s+', ' ', body[a:off]) + ' «' + term + '» ' \
-                       + re.sub(r'\s+', ' ', body[off + len(term):b])
-                print(f'    …{snip}…')
-            total += len(hits)
-
-    print(f'celkem {total} výskytů', file=sys.stderr)
-    return finish('concord', exit_on_error=False)
-
-
-# ------------------------------------------- 4b. česká konkordance ve vzorech
-
-DEFAULT_REF = '/Users/prokop/texts/reference/mined'
-
-
-def load_ref_lines(ref_dir, pho_only=False):
-    """Řádky vytěžených vzorových brožur; pho_only = jen fonetické řádky.
-
-    Rozlišení je nutné: prostý grep přes celý soubor počítá i česká jména
-    v poznámkách, takže fonetický token vypadá doloženěji, než je.
-    """
-    out = []
-    for p in sorted(Path(ref_dir).glob('*.txt')):
-        for l in p.read_text(encoding='utf-8', errors='replace').split('\n'):
-            if not l.strip():
-                continue
-            if pho_only and not looks_like_pho(l):
-                continue
-            out.append(l)
-    return out
-
-
-def word_re(needle, prefix=False):
-    """Hranice slova na obou stranách (prefix=True jen na začátku), case-insensitive.
-
-    Tohle je celý smysl modulu: `grep trvalost` najde i „vytrvalost" a přesně tak
-    se do glosáře dostal nedoložený tvar. `(?<![^\\W\\d_])` drží levou hranici i pro
-    česká písmena s diakritikou.
-    """
-    esc = re.escape(needle)
-    tail = '' if prefix else r'(?!\w)'
-    return re.compile(r'(?<!\w)' + esc + tail, re.IGNORECASE | re.UNICODE)
-
-
-def count_in(needle, lines, prefix=False):
-    rx = word_re(needle, prefix)
-    return sum(len(rx.findall(l)) for l in lines)
-
-
-def cmd_cz(args):
-    lines = load_ref_lines(args.ref, pho_only=args.pho)
-    term = args.term
-    whole = count_in(term, lines)
-    pref = count_in(term, lines, prefix=True)
-    sub = sum(l.lower().count(term.lower()) for l in lines)
-
-    scope = 'fonetické řádky' if args.pho else 'všechny řádky'
-    print(f'„{term}" ve vzorech ({scope}):')
-    print(f'  celé slovo      {whole}×')
-    if args.pho:
-        # Fonetické tokeny se neskloňují, takže předponový počet jen sbírá cizí
-        # slova (THRI by „doložilo" THRIN z phrin las). Rozhoduje celé slovo.
-        print(f'  jako podřetězec {sub}×   (předpona se u fonetiky neposuzuje)')
-    else:
-        print(f'  jako předpona   {pref}×   (celé slovo + skloňované tvary)')
-        print(f'  jako podřetězec {sub}×')
-
-    base = whole if args.pho else pref
-    if sub > base:
-        rx = re.compile(r'\w*' + re.escape(term) + r'\w*', re.IGNORECASE | re.UNICODE)
-        hosts = Counter(m.group(0).lower() for l in lines for m in rx.finditer(l))
-        inside = {w: n for w, n in hosts.items() if not word_re(term, True).fullmatch(w)}
-        if inside:
-            warn('cz', f'{sub - base} výskytů je jen UVNITŘ jiných slov: '
-                       + ', '.join(f'{w} {n}×' for w, n in
-                                   Counter(inside).most_common(5)))
-    if base == 0:
-        warn('cz', 'žádný doklad jako samostatné slovo — u česky znějícího termínu '
-                   'je to varovný signál, ne povolení')
-
-    shown = 0
-    rx = word_re(term, prefix=not args.pho)
-    for l in lines:
-        if shown >= args.max or not rx.search(l):
-            continue
-        print(f'    {l.strip()[:150]}')
-        shown += 1
-    return finish('cz', exit_on_error=False)
-
-
 # ---------------------------------------------------------- 5. glossary
 
-GLOSS_COLS = ('tib', 'wylie', 'czech', 'stem', 'status', 'note')
+GLOSS_COLS = ('tib', 'wylie', 'target', 'stem', 'status', 'note')
+
+
+def default_glossary():
+    """./glossary.tsv in the working directory if present, else the skill default."""
+    local = Path('glossary.tsv')
+    if local.is_file():
+        return str(local)
+    return str(Path(__file__).resolve().parent.parent / 'glossary.tsv')
 
 
 def load_glossary(path):
+    """empty stem = exact target string; inflecting languages should fill stem."""
     rows = []
     for raw in Path(path).read_text(encoding='utf-8').splitlines():
         if not raw.strip() or raw.lstrip().startswith('#'):
@@ -834,16 +713,13 @@ def load_glossary(path):
         f += [''] * (len(GLOSS_COLS) - len(f))
         row = dict(zip(GLOSS_COLS, f[:len(GLOSS_COLS)]))
         row['status'] = row['status'].strip() or 'prov'
-        row['stem'] = row['stem'].strip() or row['czech'].strip()[:-2]
+        row['stem'] = row['stem'].strip() or row['target'].strip()
         rows.append(row)
     return rows
 
 
-DEFAULT_GLOSSARY = str(Path(__file__).resolve().parent.parent / 'glossary.tsv')
-
-
 def glossary_drift(rows, lines):
-    """[(row, počet výskytů, [(řádek, česká glosa)])] pro segmenty s odchylkou."""
+    """[(row, hit count, [(line, target-language gloss)])] for segments with a drift."""
     out = []
     for r in rows:
         tkey, stem = key_tib(r['tib']), fold(r['stem'])
@@ -854,9 +730,9 @@ def glossary_drift(rows, lines):
             l = lines[i]
             if not has_tib(l) or tkey not in key_tib(l):
                 continue
-            czs = czech_lines(lines, i)
+            czs = target_lines(lines, i)
             if not czs:
-                continue                          # mantra bez české glosy
+                continue                          # mantra without a target-language gloss
             hits += 1
             if not any(stem in fold(c) for c in czs):
                 bad.append((i + 1, ' / '.join(czs).strip()))
@@ -865,27 +741,28 @@ def glossary_drift(rows, lines):
 
 
 def cmd_glossary(args):
-    gpath = Path(args.file) if args.file else Path(DEFAULT_GLOSSARY)
+    gpath = Path(args.file or default_glossary())
+    print(f'note: glossary = {gpath}', file=sys.stderr)
     if args.check and not args.corpus:
-        err('glossary', '--check vyžaduje --corpus')
+        err('glossary', '--check requires --corpus')
         return finish('glossary')
     corpus = Path(args.corpus) if args.corpus else None
 
     rows = load_glossary(gpath)
 
     if args.prompt:
-        print('Ustanovené konvence (závazné, generováno z glossary.tsv):')
+        print('Established conventions (binding, generated from glossary.tsv):')
         for r in rows:
             if r['status'] == 'open':
                 continue
-            mark = '' if r['status'] == 'fixed' else ' (provizorní)'
+            mark = '' if r['status'] == 'fixed' else ' (provisional)'
             note = f" — {r['note']}" if r['note'].strip() else ''
-            print(f"- {r['wylie'] or r['tib']} = {r['czech']}{mark}{note}")
+            print(f"- {r['wylie'] or r['tib']} = {r['target']}{mark}{note}")
         return 0
 
     if args.check:
         fixed = [r for r in rows if r['status'] == 'fixed']
-        print(f'# glossary --check: {len(fixed)} závazných termínů')
+        print(f'# glossary --check: {len(fixed)} binding terms')
         stat = {id(r): [0, []] for r in fixed}
         for _, text, p in iter_texts(corpus, '**/text.md'):
             lines = p.read_text(encoding='utf-8').split('\n')
@@ -895,224 +772,41 @@ def cmd_glossary(args):
                 s[1] += [(text[:38], ln, cz[:70]) for ln, cz in bad]
         for r in fixed:
             hits, bad = stat[id(r)]
-            label = (r['wylie'] or r['tib']) + ' → ' + r['czech']
+            label = (r['wylie'] or r['tib']) + ' → ' + r['target']
             if bad:
-                warn('glossary', f'{label}: {len(bad)} z {hits} výskytů jinak')
+                warn('glossary', f'{label}: {len(bad)} of {hits} occurrences differ')
                 for text, ln, cz in bad[:args.max]:
                     print(f'    {text}:{ln}  {cz}')
             else:
                 print(f'  ok  {label}  ({hits}×)')
         return finish('glossary', exit_on_error=False)
 
-    if args.audit:
-        # Opačný směr než --check: ten hlídá text proti glosáři, tohle glosář proti
-        # vzorům. Šest vad cyklu Pudri Rekpung (Džigdral, vidjádhara, vítězové,
-        # samaji a dva neinvariantní stemy) prošlo celým prvním během právě proto,
-        # že tuhle kontrolu nikdo neudělal.
-        lines = load_ref_lines(args.ref)
-        report = []
-        for r in rows:
-            if r['status'] == 'open':
-                continue
-            stem, czech = r['stem'].strip(), r['czech'].strip()
-            if not stem:
-                continue
-            pref = count_in(stem, lines, prefix=True)
-            sub = sum(l.lower().count(stem.lower()) for l in lines)
-            # Stem nemusí být předpona celé fráze: hlavička glosáře u víceslovných
-            # termínů žádá ROZLIŠUJÍCÍ slovo („z lebek", „bez počátku"). Vadou je
-            # teprve stem, který v českém poli vůbec není.
-            bad_stem = fold(stem) not in fold(czech)
-            report.append((pref, sub, bad_stem, r))
-
-        report.sort(key=lambda x: (x[0], x[1]))
-        print(f'# glossary --audit: {len(report)} termínů proti {args.ref}')
-        for pref, sub, bad_stem, r in report:
-            label = f"{r['wylie'] or r['tib']} → {r['czech']}"
-            flag = ''
-            if bad_stem:
-                flag += ' STEM-NENÍ-PREFIX'
-            if pref == 0 and sub > 0:
-                flag += ' JEN-UVNITŘ-JINÝCH-SLOV'
-            if pref == 0 and r['status'] == 'fixed':
-                warn('glossary', f'{label}: stem „{r["stem"]}" 0× ve vzorech{flag}')
-            elif pref == 0:
-                print(f'  --  {label}: 0× (prov, oporu nevyžaduje){flag}')
-            elif pref < 3 and r['status'] == 'fixed':
-                warn('glossary', f'{label}: stem „{r["stem"]}" jen {pref}× — '
-                                 f'na `fixed` je to slabá opora{flag}')
-            else:
-                print(f'  ok  {label}  ({pref}×){flag}')
-        return finish('glossary', exit_on_error=False)
-
-    print(f'{gpath}: {len(rows)} řádků '
+    print(f'{gpath}: {len(rows)} rows '
           + ', '.join(f'{k} {v}' for k, v in Counter(r['status'] for r in rows).items()))
     return 0
 
 
-# ---------------------------------------------------- 6. pho (z lexikonu)
+# ------------------------------------------------------------- 6. meter
 
-DEFAULT_LEXICON = '/Users/prokop/texts/reference/mined/pho_lexicon.tsv'
-
-
-def tib_syllables(line):
-    """Slabiky tibetského řádku (bez interpunkce a značek); `ཿ` dělí, viz syl()."""
-    core = re.sub(f'[^{TIB}]', ' ', line)
-    core = re.sub(f'[{SHAD}{NYIS_SHAD}{SBRUL_SHAD}{TERMA_SHAD}༄༅༃]', ' ', core)
-    core = re.sub(f'{VISARGA}(?=[^{TSHEG}\\s])', VISARGA + TSHEG, core)
-    return [s for s in re.split(f'[{TSHEG}\\s]+', core) if s]
-
-
-def load_lexicon(path):
-    """slabika → (dominantní přepis, jistota 0–1). Zdroj: pdfmine lexicon."""
-    lex = {}
-    for line in Path(path).read_text(encoding='utf-8').splitlines():
-        if line.startswith('#') or not line.strip():
-            continue
-        f = line.split('\t')
-        if len(f) < 3 or not f[2].isdigit():
-            continue
-        top, n = f[1], int(f[2])
-        total = n
-        for v in (f[3] if len(f) > 3 else '').split(' | '):
-            m = re.match(r'.+ (\d+)×$', v.strip())
-            if m:
-                total += int(m.group(1))
-        lex[f[0]] = (top, n / max(total, 1), n)
-    return lex
-
-
-def render_pho(tib, lex, singletons=None):
-    """→ (fonetika, neznámé slabiky). Neznámá slabika se značí ???.
-
-    `singletons` (list) posbírá slabiky, jejichž přepis stojí na JEDINÉM zarovnání.
-    Takový záznam dostane v `load_lexicon` spolehlivost 1,0, i když je to klidně
-    misalignment: `སརྦ → TRI` z jedné stránky vyrobil „TRI VIGHNĀN BAM" místo
-    „SARVA BIGHNAN BAM". 444 z 1254 záznamů lexikonu stojí na jednom výskytu, takže
-    je nelze zahodit — ale revidující musí vědět, kde se dívat.
-    """
-    out, unknown = [], []
-    for s in tib_syllables(tib):
-        if s in lex:
-            out.append(lex[s][0])
-            if singletons is not None and len(lex[s]) > 2 and lex[s][2] <= 1:
-                singletons.append((s, lex[s][0]))
-        else:
-            out.append('???')
-            unknown.append(s)
-    return ' '.join(out), unknown
-
-
-MERGE_MIN = 2      # slitý tvar s jediným výskytem není doklad, ale šum
-
-
-def merge_bigrams(pho, ref_lines, log=None, thin=None):
-    """Slije sousední tokeny tam, kde vzory slitý tvar píší častěji než rozdělený.
-
-    Lexikon je slabikový, takže slité tvary (JEŠE, SÖLWA, LAMA, HERUKA…) vyrobit
-    nedokáže a `render_pho` je vždy rozdělí. Test je čisté počítání, proto patří sem
-    a ne do agenta — dřív ho dělal subagent po jednotlivých grepech za ~150 k tokenů
-    na text.
-
-    Dvě věci, které tenhle test principiálně nechytá (a nepředstírá to):
-    vsunuté `n` (KHA + DRO → KHANDRO) a trojslabičné složeniny.
-    """
-    toks = pho.split()
-    i = 0
-    while i < len(toks) - 1:
-        a, b = toks[i], toks[i + 1]
-        if '???' in (a, b):
-            i += 1
-            continue
-        split_n = count_in(f'{a} {b}', ref_lines)
-        merged_n = count_in(f'{a}{b}', ref_lines)
-        if merged_n > split_n and merged_n >= MERGE_MIN:
-            toks[i:i + 2] = [a + b]
-            if log is not None:
-                log.append((f'{a} {b}', split_n, a + b, merged_n))
-            continue                       # týž index znovu — může jít slít i dál
-        if merged_n > split_n and thin is not None:
-            # Slitý tvar sice vyhrál, ale na jednom výskytu. Nesléváme a hlásíme —
-            # tohle je přesně místo, kde subagent dřív uplatnil soud nad kontextem.
-            thin.append((f'{a} {b}', split_n, a + b, merged_n))
-        i += 1
-    return ' '.join(toks)
-
-
-def cmd_pho(args):
-    lex = load_lexicon(args.lexicon)
-    src = parse_source(args.source)
-    ref_lines = [] if args.no_merge else load_ref_lines(args.ref, pho_only=True)
-    merges, thin, weak_lex = [], [], []
-    done, todo = [], []
-    for num in sorted(src, key=lambda x: float(x)):
-        seg = src[num]
-        if seg.type not in ('verse', 'mantra'):
-            continue
-        singles = []
-        pho, unknown = render_pho(seg.tib, lex, singles)
-        if unknown:
-            todo.append((num, seg.tib, unknown))
-        else:
-            weak_lex += [(num, syl_, tr) for syl_, tr in singles]
-            if ref_lines:
-                log, weak = [], []
-                pho = merge_bigrams(pho, ref_lines, log, weak)
-                merges += [(num, *m) for m in log]
-                thin += [(num, *m) for m in weak]
-            done.append((num, pho))
-    out = Path(args.out)
-    out.write_text(''.join(f'{n}\t{p}\n' for n, p in done), encoding='utf-8')
-    todo_path = Path(args.todo) if args.todo else out.parent / 'pho_todo.txt'
-    if todo:
-        todo_path.write_text(
-            ''.join(f'{n}\t{t}\t# neznámé: {" ".join(u)}\n' for n, t, u in todo),
-            encoding='utf-8')
-    total = len(done) + len(todo)
-    print(f'{out}: {len(done)}/{total} veršů z lexikonu '
-          f'({len(done)/max(total,1):.0%})')
-    if merges:
-        print(f'sloučeno dle vzorů: {len(merges)}×')
-        for num, pair, sn, joined, mn in merges:
-            print(f'  {num}: {pair} ({sn}×) → {joined} ({mn}×)')
-    if weak_lex:
-        uniq = {(sy, tr) for _, sy, tr in weak_lex}
-        warn('pho', f'{len(uniq)} slabik stojí na JEDINÉM zarovnání lexikonu — '
-                    f'ověř je (`cz <TOKEN> --pho`), tady vznikají misalignmenty')
-        for sy, tr in sorted(uniq):
-            segs = sorted({n for n, s2, _ in weak_lex if s2 == sy}, key=float)
-            print(f'  {sy} → {tr}   segmenty: {", ".join(map(str, segs[:8]))}')
-    if thin:
-        print(f'NESLOUČENO, slabý doklad (slitý tvar < {MERGE_MIN}×): {len(thin)}× '
-              f'— rozhodni ručně podle kontextu')
-        for num, pair, sn, joined, mn in thin:
-            print(f'  {num}: {pair} ({sn}×) vs {joined} ({mn}×)')
-    if todo:
-        miss = Counter(s for _, _, u in todo for s in u)
-        print(f'{todo_path}: {len(todo)} veršů s neznámou slabikou; '
-              f'nejčastější: {", ".join(s for s, _ in miss.most_common(6))}')
-    return finish('pho', exit_on_error=False)
-
-
-# ------------------------------------------------------------- 7. meter
-
-CZ_VOWELS = 'aáeéěiíoóuúůyý'
-# Naměřeno na 1683 verších vzorových textů v reference/ (25 brožur, 2026-07): české
-# slabiky dělené tibetskými. Vzory jsou autorita — jejich úzus je expanzivnější než
-# dřívější norma skillu (1,71×), protože nesou vysvětlující vsuvky v závorkách.
+# Measured on published Czech translations (1683 verses, 25 booklets, 2026-07). Only a
+# starting point for another target language — recalibrate with `meter`; --max-ratio
+# overrides both here.
 MEDIAN_EXPANSION = 2.33
 OUTLIER_EXPANSION = 4.33
 
+# Latin-script targets only; vowels that do not NFD-decompose (ø, æ) and non-Latin
+# scripts count 0 — extend per language.
+VOWELS = 'aeiouy'
 
-def cz_syl(line):
-    """České slabiky ≈ skupiny samohlásek; ou/au/eu jako jedna."""
-    s = re.sub(r'[^\w\s]', ' ', line.lower())
-    s = re.sub(r'(ou|au|eu)', 'ó', s)
-    return len(re.findall(f'[{CZ_VOWELS}]+', s))
+
+def target_syl(line):
+    """Target-language syllables (Latin-script targets) ≈ vowel-run count after
+    folding to plain lowercase."""
+    return len(re.findall(f'[{VOWELS}]+', fold(line)))
 
 
 def verse_triplets(lines):
-    """(index, tib, pho, cz) pro trojice verš/mantra; rubriky a front matter mimo."""
+    """(index, tib, pho, target) for verse/mantra triplets; rubrics and front matter excluded."""
     out = []
     i = front_matter_end(lines)
     while i < len(lines) - 2:
@@ -1126,46 +820,50 @@ def verse_triplets(lines):
 
 
 def cmd_meter(args):
-    """Recitovatelnost se měří RELATIVNÍ expanzí, ne absolutním rozdílem slabik.
+    """Recitability is measured as RELATIVE expansion, not an absolute syllable difference.
 
-    Čeština je polysylabická a flektivní: sedmislabičný tibetský verš věrně
-    přeložený zabere ~12 slabik. Naměřeno na 1127 verších cyklu Pudri Rekpung:
-    medián 1.71×, p90 2.43×, p99 3.00× (MEDIAN_EXPANSION/OUTLIER níže). Absolutní
-    limit („±3 slabiky") by tlačil k telegrafické češtině — proto se hlídá jen
-    odlehlost vůči tomuto pásmu.
+    Czech is polysyllabic and inflectional: a seven-syllable Tibetan verse translated
+    faithfully takes ~12 syllables. The thresholds MEDIAN_EXPANSION/OUTLIER_EXPANSION
+    below were measured on published Czech translations and are only a starting point for another
+    target language — override with --max-ratio, and recalibrate by running `meter`
+    over your own finished texts. An absolute limit ("±3 syllables") would push
+    toward telegraphic phrasing — so only the outlier distance from this band is
+    flagged.
     """
     lines = Path(args.text).read_text(encoding='utf-8').split('\n')
     rows = []
     for ln, tib, pho, cz in verse_triplets(lines):
-        t, c = syl(tib), cz_syl(cz)
+        t, c = syl(tib), target_syl(cz)
         if t >= 4 and c:
             rows.append((c / t, ln, t, c, cz.strip()))
     if not rows:
-        print('žádné verše k měření')
+        print('no verses to measure')
         return 0
     ratios = sorted(r[0] for r in rows)
     n = len(ratios)
-    print(f'{args.text}: {n} veršů | expanze medián {ratios[n // 2]:.2f}×, '
+    print(f'{args.text}: {n} verses | expansion median {ratios[n // 2]:.2f}×, '
           f'p10 {ratios[int(n * .1)]:.2f}×, p90 {ratios[int(n * .9)]:.2f}× '
-          f'(korpus: {MEDIAN_EXPANSION:.2f}× / p99 {OUTLIER_EXPANSION:.2f}×)')
+          f'(published Czech translations: {MEDIAN_EXPANSION:.2f}× / p99 {OUTLIER_EXPANSION:.2f}×)')
     over = [r for r in rows if r[0] > args.max_ratio]
-    print(f'nad {args.max_ratio:.2f}× (kandidáti revize): {len(over)} ({len(over) / n:.0%})')
+    print(f'over {args.max_ratio:.2f}× (review candidates): {len(over)} ({len(over) / n:.0%})')
     for ratio, ln, t, c, cz in sorted(over, reverse=True)[:args.max]:
-        print(f'  ř.{ln:>5}  tib {t:>2} / cz {c:>2} ({ratio:.2f}×)  {cz[:80]}')
+        print(f'  ln.{ln:>5}  tib {t:>2} / target {c:>2} ({ratio:.2f}×)  {cz[:80]}')
     return 0
 
 
-# ----------------------------------------------------------- 6b. czech (export)
+# ------------------------------------------------------------ 7. target
 
-def czech_line_numbers(lines):
-    """[(číslo řádku v text.md, český řádek)] pro celý text bez titulního bloku.
+def target_line_numbers(lines):
+    """[(line number in text.md, target-language line)] for the whole text, title block excluded.
 
-    Prázdný řádek předává jako (0, '') — hranice strof musí korektor vidět, jinak
-    nemůže soudit pravidlo „neopakuj totéž slovo ve dvou sousedních řádcích".
+    Passes a blank line through as (0, '') — the proofreader must see stanza
+    boundaries, otherwise they can't apply the rule "don't repeat the same word in
+    two adjacent lines".
 
-    Fonetika se pozná **pozicí v bloku, ne stylem řádku** — `looks_like_pho` bere za
-    fonetiku i český verš minuskami bez interpunkce („kéž se jejich klam rozplyne"),
-    takže stylový filtr by takové verše z exportu tiše vypustil (viz czech_lines).
+    Phonetics is recognized **by position in the block, not by line style** —
+    `looks_like_pho` also treats an unpunctuated lowercase target-language verse
+    ("kéž se jejich klam rozplyne") as phonetics, so a style filter would silently
+    drop such verses from the export (see target_lines).
     """
     out = []
     i = front_matter_end(lines)
@@ -1180,35 +878,36 @@ def czech_line_numbers(lines):
                 if not nxt.strip() or has_tib(nxt):
                     break
                 raw.append(nxt)
-            cz = czech_lines(lines, i)
-            off = len(raw) - len(cz)           # fonetika/titul na začátku bloku
+            cz = target_lines(lines, i)
+            off = len(raw) - len(cz)           # phonetics/title at the start of the block
             for k, c in enumerate(cz):
                 out.append((i + off + k + 2, c))
             i += 1 + len(raw)
         else:
-            out.append((i + 1, l))             # rubrika/nadpis/kolofon bez tibetštiny
+            out.append((i + 1, l))             # rubric/heading/colophon without Tibetan
             i += 1
     return out
 
 
-def cmd_czech(args):
-    """Jen české řádky text.md, očíslované — vstup pro monolingválního korektora.
+def cmd_target(args):
+    """Only the target-language lines of text.md, numbered — input for a monolingual proofreader.
 
-    Korektor nesmí vidět tibetštinu ani fonetiku: s originálem po ruce si nečeskou
-    formulaci omluví zdrojem („ale tibetsky to tak stojí"), a to je přesně vada,
-    kterou má najít. Čísla řádků jsou čísla řádků text.md, aby findingy šly citovat
-    stejným adresováním jako `check` a `meter`.
+    The proofreader must not see the Tibetan or the phonetics: with the original at
+    hand, an unnatural phrasing gets excused by the source ("but that's how it stands
+    in Tibetan"), and that's exactly the defect they're supposed to catch. The line
+    numbers are text.md line numbers, so findings can be cited with the same
+    addressing as `check` and `meter`.
     """
     lines = Path(args.text).read_text(encoding='utf-8').split('\n')
-    rows = czech_line_numbers(lines)
+    rows = target_line_numbers(lines)
     for n, cz in rows:
         print(f'{n}\t{cz}' if cz else '')
     n_cz = sum(1 for _, cz in rows if cz)
-    print(f'{args.text}: {n_cz} českých řádků', file=sys.stderr)
+    print(f'{args.text}: {n_cz} target-language lines', file=sys.stderr)
     return 0
 
 
-# ----------------------------------------------------------------- 7. check
+# ----------------------------------------------------------------- 8. check
 
 def cmd_check(args):
     lines = Path(args.text).read_text(encoding='utf-8').split('\n')
@@ -1219,7 +918,7 @@ def cmd_check(args):
         sm = difflib.SequenceMatcher(None, original, got, autojunk=False)
         for tag, i1, i2, j1, j2 in sm.get_opcodes():
             if tag in ('delete', 'replace') and (i2 - i1) >= 8:
-                err('check', f'chybí/změněno {i2-i1} znaků originálu na offsetu {i1}: '
+                err('check', f'missing/changed {i2-i1} characters of the original at offset {i1}: '
                              f'…{original[i1:i1+60]}…')
 
     fm_end = front_matter_end(lines)
@@ -1228,45 +927,48 @@ def cmd_check(args):
         if not l.strip():
             continue
         if is_punct_only(l):
-            err('check', f'{i+1}: řádek obsahuje jen tibetskou interpunkci: {l!r}')
+            err('check', f'{i+1}: line contains only Tibetan punctuation: {l!r}')
         if 'PHO?' in l or 'TODO' in l:
-            err('check', f'{i+1}: placeholder v textu: {l.strip()[:50]}')
+            err('check', f'{i+1}: placeholder in the text: {l.strip()[:50]}')
         if has_tib(l) and i >= fm_end:
             nxt = lines[i + 1] if i + 1 < len(lines) else ''
             if not nxt.strip() or has_tib(nxt):
-                err('check', f'{i+1}: osiřelý tibetský řádek: {l[:50]}')
+                err('check', f'{i+1}: orphaned Tibetan line: {l[:50]}')
         if not has_tib(l) and re.search(f'[{TIB}]', l):
-            err('check', f'{i+1}: tibetský znak v českém řádku')
+            err('check', f'{i+1}: Tibetan character in a target-language line')
 
-    # varování: fonetika vs. slabiky
+    # warning: phonetics vs. syllables
     for i in range(len(lines) - 1):
         if has_tib(lines[i]) and looks_like_pho(lines[i + 1]):
             a, b = syl(lines[i]), len(pho_tokens(lines[i + 1]))
             if b and abs(a - b) > 2:
-                warn('check', f'{i+2}: fonetika má {b} slov, tibetština {a} slabik '
-                              f'— možná posunutá: {lines[i+1][:40]}')
+                warn('check', f'{i+2}: phonetics has {b} words, Tibetan {a} syllables '
+                              f'— possibly shifted: {lines[i+1][:40]}')
 
-    # varování: recitovatelnost — relativní expanze nad p99 korpusu (~1 % řádků)
+    # warning: recitability — relative expansion above the published-translations p99 (~1% of lines)
     max_ratio = getattr(args, 'max_ratio', OUTLIER_EXPANSION)
     for ln, tib, pho, cz in verse_triplets(lines):
-        t, c = syl(tib), cz_syl(cz)
+        t, c = syl(tib), target_syl(cz)
         if t >= 4 and c and c / t > max_ratio:
-            warn('check', f'{ln+2}: {c} českých slabik na {t} tibetských '
-                          f'({c/t:.2f}× proti mediánu {MEDIAN_EXPANSION:.2f}×) '
-                          f'— pravděpodobně výklad ve verši: {cz.strip()[:60]}')
-    # varování: drift proti glosáři — jediná pojistka proti tomu, aby banka tripletů
-    # a --reuse vtáhly termín, který glosář už zamítl (viz sekce Terminologie v SKILL.md)
-    for r, _, bad in glossary_drift([g for g in load_glossary(DEFAULT_GLOSSARY)
+            warn('check', f'{ln+2}: {c} target-language syllables for {t} Tibetan '
+                          f'({c/t:.2f}× against median {MEDIAN_EXPANSION:.2f}×) '
+                          f'— probably an explanatory gloss in the verse: {cz.strip()[:60]}')
+    # warning: drift against the glossary — the only safeguard against the triplet bank
+    # and --reuse pulling in a term the glossary has already rejected (see the
+    # Terminology section in SKILL.md)
+    gpath = args.glossary or default_glossary()
+    print(f'note: glossary = {gpath}', file=sys.stderr)
+    for r, _, bad in glossary_drift([g for g in load_glossary(gpath)
                                      if g['status'] == 'fixed'], lines):
         for ln, cz in bad[:3]:
-            warn('check', f'{ln}: glosář žádá „{r["czech"]}" pro '
+            warn('check', f'{ln}: glossary requires "{r["target"]}" for '
                           f'{r["wylie"] or r["tib"]}: {cz[:60]}')
 
-    print(f'{args.text}: zkontrolováno {len(lines)} řádků')
+    print(f'{args.text}: checked {len(lines)} lines')
     return finish('check')
 
 
-# -------------------------------------------------------------- 5. selftest
+# --------------------------------------------------- 9. consist + selftest
 
 FIXTURE_TERMA = (
     '༄༅། །རྡོ་རྗེ་ཕུར་པའི་ལས་བྱང་བཞུགས་སོ། །\n\n'
@@ -1282,37 +984,37 @@ FIXTURE_SHAD = (
 
 
 def cmd_consist(args):
-    """Týž tibetský řádek → táž čeština napříč hotovými texty cyklu.
+    """The same Tibetan line → the same target-language rendering across finished texts of a cycle.
 
-    `glossary --check` je per-text a per-termín; tohle hlídá celé řádky. Přesně to má
-    zajišťovat banka tripletů, ale banka se uplatní jen při buildu — text sestavený
-    dřív, než sourozenec existoval, o ní neví.
+    `glossary --check` is per-text and per-term; this guards whole lines. That is
+    exactly what the triplet bank is supposed to ensure, but the bank only applies at
+    build time — a text assembled before its sibling existed never learns of it.
     """
-    seen = {}          # key_tib -> {čeština: [texty]}
+    seen = {}          # key_tib -> {target text: [texts]}
     for _, text, p in iter_texts(args.corpus, '**/text.md'):
         lines = p.read_text(encoding='utf-8').split('\n')
         for i in range(front_matter_end(lines), len(lines)):
             if not has_tib(lines[i]):
                 continue
-            czs = czech_lines(lines, i)
+            czs = target_lines(lines, i)
             if not czs:
                 continue
             cz = ' / '.join(c.strip() for c in czs)
             key = key_tib(lines[i])
-            if len(key) < 8:                 # krátké řádky (mantry, značky) nesoudíme
+            if len(key) < 8:                 # short lines (mantras, markers) aren't judged
                 continue
             seen.setdefault(key, {}).setdefault(cz, []).append(text[:38])
 
     clashes = {k: v for k, v in seen.items() if len(v) > 1}
     shared = sum(1 for v in seen.values() if sum(len(t) for t in v.values()) > 1)
-    print(f'# consist: {len(seen)} unikátních tibetských řádků, '
-          f'{shared} se opakuje napříč texty')
+    print(f'# consist: {len(seen)} unique Tibetan lines, '
+          f'{shared} repeat across texts')
     for key, variants in sorted(clashes.items(), key=lambda x: -len(x[1]))[:args.max]:
-        warn('consist', f'{len(variants)} různých překladů téhož řádku:')
+        warn('consist', f'{len(variants)} different translations of the same line:')
         for cz, texts in variants.items():
             print(f'    [{", ".join(sorted(set(texts)))}] {cz[:110]}')
     if not clashes:
-        print('  ok  žádný tibetský řádek nemá napříč texty dvě různé češtiny')
+        print('  ok  no Tibetan line has two different renderings across texts')
     return finish('consist', exit_on_error=False)
 
 
@@ -1332,79 +1034,62 @@ def cmd_selftest(_args):
             cmd_segment(ns)
             segs = parse_source(out)
             recon = norm_tib(''.join(s.tib for s in segs.values()))
-            assert recon == norm_tib(text), f'{name}: rekonstrukce'
+            assert recon == norm_tib(text), f'{name}: reconstruction'
             assert all(not is_punct_only(s.tib) for s in segs.values()), f'{name}: punct-only'
             types = [s.type for s in sorted(segs.values(), key=lambda s: float(s.num))]
-            print(f'selftest {name}: {len(segs)} segmentů, typy {types}')
+            print(f'selftest {name}: {len(segs)} segments, types {types}')
             if name == 'terma':
-                assert 'mantra' in types, 'mantra nedetekována'
-                assert types[0] == 'heading', 'heading nedetekován'
+                assert 'mantra' in types, 'mantra not detected'
+                assert types[0] == 'heading', 'heading not detected'
             else:
-                assert len(segs) >= 3, 'shad režim: ༈ nerozdělil jednotky'
+                assert len(segs) >= 3, 'shad mode: ༈ did not split units'
+
+    assert target_syl('mou drahou zemi') == 5, 'target_syl: vowel-run count'
+    assert target_syl('KÉŽ SE JEJICH KLAM') == 5, 'target_syl: uppercase + accented'
+    assert pho_tokens('Kéž se jejich klam, rozplyne!') == \
+        ['kéž', 'se', 'jejich', 'klam', 'rozplyne'], 'pho_tokens: diacritics'
+    assert pho_tokens("SEM PA’I ŽÄL") == ['sem', 'pa', 'i', 'žäl'], 'pho_tokens: apostrophe'
+    print('selftest target_syl + pho_tokens: OK')
+
+    _warn = _err = 0
+    lint_pho(1, 'verse', 'LÁMA', pho_lint=True)
+    assert _warn == 1, 'lint_pho: length mark must warn with --pho-lint'
+    _warn = _err = 0
+    lint_pho(1, 'verse', 'LÁMA', pho_lint=False)
+    assert _warn == 0, 'lint_pho: length mark must not warn without --pho-lint'
+    _warn = _err = 0
+    print('selftest lint_pho: OK')
 
     tib = 'ངོ་བོ་ཉིད།'
-    assert czech_lines([tib, 'NGO WO ŇI', 'esence sama'], 0) == ['esence sama'], \
-        'czech_lines: verš'
-    assert czech_lines([tib, 'ngo wo ňi', 'esence sama'], 0) == ['esence sama'], \
-        'czech_lines: verš se starou fonetikou minuskami'
-    assert czech_lines([tib, 'OM AH HUNG'], 0) == [], 'czech_lines: mantra'
-    assert czech_lines([tib, 'recitujte sedmkrát'], 0) == ['recitujte sedmkrát'], \
-        'czech_lines: rubrika bez interpunkce'
+    assert target_lines([tib, 'NGO WO ŇI', 'esence sama'], 0) == ['esence sama'], \
+        'target_lines: verse'
+    assert target_lines([tib, 'ngo wo ňi', 'esence sama'], 0) == ['esence sama'], \
+        'target_lines: verse with old lowercase phonetics'
+    assert target_lines([tib, 'OM AH HUNG'], 0) == [], 'target_lines: mantra'
+    assert target_lines([tib, 'recitujte sedmkrát'], 0) == ['recitujte sedmkrát'], \
+        'target_lines: rubric without punctuation'
 
-    grow = [dict(tib='ངོ་བོ', wylie='ngo bo', czech='esence', stem='esenc',
+    grow = [dict(tib='ངོ་བོ', wylie='ngo bo', target='esence', stem='esenc',
                  status='fixed', note='')]
     assert not glossary_drift(grow, [tib, 'NGO WO ŇI', 'esence sama'])[0][2], \
-        'glossary_drift: falešný poplach'
+        'glossary_drift: false alarm'
     assert glossary_drift(grow, [tib, 'NGO WO ŇI', 'podstata sama'])[0][2], \
-        'glossary_drift: odchylka nezachycena'
-    print('selftest czech_lines + glossary_drift: OK')
+        'glossary_drift: drift not caught'
+    print('selftest target_lines + glossary_drift: OK')
 
     doc = [tib, 'NGO WO ŇI', 'esence sama', '',
            tib, 'OM AH HUNG', '',
            tib, 'kéž se jejich klam rozplyne', '',
            'recitujte třikrát']
-    got = [(n, c) for n, c in czech_line_numbers(doc) if c]
+    got = [(n, c) for n, c in target_line_numbers(doc) if c]
     assert got == [(3, 'esence sama'), (9, 'kéž se jejich klam rozplyne'),
-                   (11, 'recitujte třikrát')], f'czech_line_numbers: {got}'
-    assert all(doc[n - 1] == c for n, c in got), 'czech_line_numbers: čísla řádků'
+                   (11, 'recitujte třikrát')], f'target_line_numbers: {got}'
+    assert all(doc[n - 1] == c for n, c in got), 'target_line_numbers: line numbers'
     assert not any(has_tib(c) or looks_like_iast(c) for _, c in got), \
-        'czech_line_numbers: tibetština v exportu'
-    print('selftest czech_line_numbers: OK')
+        'target_line_numbers: Tibetan in the export'
+    print('selftest target_line_numbers: OK')
 
-    # --- word_re / count_in: substringová past, kvůli které glosář nesl nedoložený tvar
-    trap = ['a dosáhnou vytrvalosti', 'trvalost sama', 'TRVALOST']
-    assert count_in('trvalost', trap) == 2, 'count_in: celé slovo'
-    assert count_in('trvalost', trap, prefix=True) == 2, 'count_in: předpona'
-    assert sum(l.lower().count('trvalost') for l in trap) == 3, 'count_in: podřetězec'
-    assert count_in('řetězec', ['řetězců mantry'], prefix=True) == 0, \
-        'count_in: „řetězec" není invariantní předpona tvaru „řetězců"'
-    assert count_in('řetěz', ['řetězců mantry'], prefix=True) == 1, \
-        'count_in: „řetěz" invariantní předpona je'
-    print('selftest count_in (substringová past): OK')
-
-    # --- merge_bigrams: slití jen tam, kde slitý tvar ve vzorech vyhrává počtem
-    ref = ['JEŠE DOR DŽE SEM', 'JEŠE KJI ROL PA', 'JE ŠE SEM PA’I ŽÄL',
-           'SÖLWA DEB SO', 'THÖ THRENG TSÄL PÄL', 'THÖ THRENG TSÄL DOR DŽE']
-    assert merge_bigrams('JE ŠE KJI', ref) == 'JEŠE KJI', 'merge_bigrams: neslilo'
-    assert merge_bigrams('THÖ THRENG TSÄL', ref) == 'THÖ THRENG TSÄL', \
-        'merge_bigrams: slilo doloženou výjimku'
-    assert merge_bigrams('??? ŠE', ref) == '??? ŠE', 'merge_bigrams: slilo ???'
-    thin = []
-    assert merge_bigrams('PHUR BU', ['PHURBU CHOG'], thin=thin) == 'PHUR BU', \
-        'merge_bigrams: slilo na jediném výskytu'
-    assert thin and thin[0][3] == 1, 'merge_bigrams: slabý doklad se nenahlásil'
-    print('selftest merge_bigrams: OK')
-
-    # --- render_pho hlásí slabiky z jediného zarovnání (zdroj misalignmentů)
-    lex_ok = {'ངོ': ('NGO', 1.0, 12), 'བོ': ('WO', 1.0, 1)}
-    sing = []
-    got_pho, unk = render_pho('ངོ་བོ།', lex_ok, sing)
-    assert got_pho == 'NGO WO', f'render_pho: {got_pho}'
-    assert sing == [('བོ', 'WO')], f'render_pho: singleton nenahlášen ({sing})'
-    assert not unk, 'render_pho: falešná neznámá slabika'
-    print('selftest render_pho singletons: OK')
-
-    # --- load_bank: vlastní složka se vynechává, jinak build čte svůj výstup
+    # --- load_bank: its own folder is excluded, otherwise a build reads its own output
     import tempfile
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -1412,11 +1097,11 @@ def cmd_selftest(_args):
             d = root / name
             d.mkdir()
             (d / 'text.md').write_text(f'{tib}\nNGO WO ŇI\n{cz}\n', encoding='utf-8')
-        assert len(load_bank(root)) >= 1, 'load_bank: nic nenačetlo'
+        assert len(load_bank(root)) >= 1, 'load_bank: loaded nothing'
         both = load_bank(root)[key_tib(tib)][1]
         only_b = load_bank(root, exclude_dir=root / 'a')[key_tib(tib)][1]
-        assert only_b == 'z textu B', f'load_bank: exclude_dir nefunguje ({only_b})'
-        assert both in ('z textu A', 'z textu B'), 'load_bank: nečekaný obsah'
+        assert only_b == 'z textu B', f'load_bank: exclude_dir does not work ({only_b})'
+        assert both in ('z textu A', 'z textu B'), 'load_bank: unexpected content'
     print('selftest load_bank exclude_dir: OK')
 
     print('selftest OK' if ok else 'selftest FAILED')
@@ -1439,7 +1124,7 @@ def main():
     p = sub.add_parser('compare')
     p.add_argument('--source', required=True)
     p.add_argument('--draft', action='append', required=True,
-                   help='LABEL=cesta[,cesta2] (víc cest = dělený běh)')
+                   help='LABEL=path[,path2] (multiple paths = a split run)')
     p.add_argument('-o', '--out')
     p.add_argument('--ratio', type=float, default=0.4)
     p.set_defaults(fn=cmd_compare)
@@ -1448,8 +1133,6 @@ def main():
     p.add_argument('--source', required=True)
     p.add_argument('--base', action='append', required=True)
     p.add_argument('--reuse')
-    p.add_argument('--reuse-bank', help='triplet_bank.tsv ze vzorových textů')
-    p.add_argument('--lexicon', default=DEFAULT_LEXICON)
     p.add_argument('--pho')
     p.add_argument('--mantra')
     p.add_argument('--overrides')
@@ -1458,67 +1141,44 @@ def main():
     p.add_argument('-o', '--out')
     p.add_argument('--dry-run', action='store_true')
     p.add_argument('--allow-gaps', action='store_true')
+    p.add_argument('--pho-lint', action='store_true',
+                   help='enable target-language transcription lints from the phonetics file '
+                        '(vowel-length marks, PHET, TSH/CCH)')
     p.set_defaults(fn=cmd_build)
 
-    p = sub.add_parser('concord', help='KWIC přes originály i hotové překlady')
-    p.add_argument('term')
-    p.add_argument('--root', default='/Users/prokop/texts')
-    p.add_argument('--context', type=int, default=60)
-    p.add_argument('--max', type=int, default=25)
-    g = p.add_mutually_exclusive_group()
-    g.add_argument('--translated-only', action='store_true')
-    g.add_argument('--originals-only', action='store_true')
-    p.set_defaults(fn=cmd_concord)
-
-    p = sub.add_parser('cz', help='doklad českého výrazu ve vzorech (celé slovo, ne podřetězec)')
-    p.add_argument('term')
-    p.add_argument('--ref', default=DEFAULT_REF)
-    p.add_argument('--max', type=int, default=8)
-    p.add_argument('--pho', action='store_true',
-                   help='počítat jen na fonetických řádcích (pro fonetické tokeny)')
-    p.set_defaults(fn=cmd_cz)
-
-    p = sub.add_parser('glossary', help='globální glosář jako data')
-    p.add_argument('--corpus', help='složka s texty k prověření driftu (--check)')
-    p.add_argument('--file')
-    p.add_argument('--ref', default=DEFAULT_REF, help='vytěžené vzory pro --audit')
+    p = sub.add_parser('glossary', help='global glossary as data')
+    p.add_argument('--corpus', help='folder of texts to check for drift (--check)')
+    p.add_argument('--file', help='glossary.tsv; empty stem = exact target string; '
+                        'inflecting languages should fill stem; '
+                        'defaults to ./glossary.tsv or the skill default')
     p.add_argument('--max', type=int, default=12)
     g = p.add_mutually_exclusive_group()
     g.add_argument('--prompt', action='store_true')
     g.add_argument('--check', action='store_true')
-    g.add_argument('--audit', action='store_true',
-                   help='opora glosáře ve vzorech: hlásí fixed termíny bez dokladu')
     p.set_defaults(fn=cmd_glossary)
 
-    p = sub.add_parser('consist', help='týž tibetský řádek → táž čeština napříč texty')
+    p = sub.add_parser('consist', help='the same Tibetan line → the same target-language text across texts')
     p.add_argument('--corpus', required=True)
     p.add_argument('--max', type=int, default=20)
     p.set_defaults(fn=cmd_consist)
 
-    p = sub.add_parser('pho', help='fonetika z lexikonu vzorových textů')
-    p.add_argument('--source', required=True)
-    p.add_argument('--lexicon', default=DEFAULT_LEXICON)
-    p.add_argument('--ref', default=DEFAULT_REF)
-    p.add_argument('--no-merge', action='store_true',
-                   help='vypnout slévání složenin dle bigramového testu')
-    p.add_argument('-o', '--out', required=True)
-    p.add_argument('--todo')
-    p.set_defaults(fn=cmd_pho)
-
-    p = sub.add_parser('meter', help='recitovatelnost: relativní expanze čeština/tibetština')
+    p = sub.add_parser('meter', help='recitability: relative expansion target-language/Tibetan')
     p.add_argument('text')
     p.add_argument('--max-ratio', type=float, default=OUTLIER_EXPANSION)
     p.add_argument('--max', type=int, default=10)
     p.set_defaults(fn=cmd_meter)
 
-    p = sub.add_parser('czech', help='jen české řádky, očíslované — pro korektora')
+    p = sub.add_parser('target', aliases=['czech'], help='only the target-language lines, numbered — for a proofreader')
     p.add_argument('text')
-    p.set_defaults(fn=cmd_czech)
+    p.set_defaults(fn=cmd_target)
 
     p = sub.add_parser('check')
     p.add_argument('text')
     p.add_argument('--source')
     p.add_argument('--original')
+    p.add_argument('--glossary', help='glossary.tsv; empty stem = exact target string; '
+                                       'inflecting languages should fill stem; '
+                                       'defaults to ./glossary.tsv or the skill default')
     p.add_argument('--max-ratio', type=float, default=OUTLIER_EXPANSION)
     p.set_defaults(fn=cmd_check)
 
@@ -1527,7 +1187,7 @@ def main():
 
     args = ap.parse_args()
     if args.cmd == 'build' and not args.out and not args.dry_run:
-        ap.error('build: -o/--out je povinné (nebo --dry-run)')
+        ap.error('build: -o/--out is required (or --dry-run)')
     sys.exit(args.fn(args) or 0)
 
 

@@ -1,0 +1,42 @@
+# Default configuration of the lotsawa skill.
+#
+# Override: a `lotsawa.yaml` in the project root (the directory Claude Code runs in)
+# is merged over this file — top-level keys replace, `roles` merge per role, keys
+# you do not specify are inherited. The same rule applies to `glossary.tsv`,
+# `phonetics.md` and `style.md`: a same-name file in the project root replaces the
+# skill default.
+
+target_language: Czech
+
+# Passed as --max-ratio to `lotsawa.py check` and `meter`: ratio of target-language
+# syllables to Tibetan syllables above which a verse line is flagged for review.
+# 4.3 was measured on Czech (p99); recalibrate with `meter` over your finished texts.
+max_expansion_ratio: 4.3
+
+# Passes --pho-lint to `lotsawa.py build`: enables the transcription rules of the
+# phonetics file in effect (no vowel-length marks, PHET not PHE, TSH not CCH).
+# Set false when your phonetics.md uses a different system.
+phonetics_lint: true
+
+# When true, `translator_2` produces a second full draft for every text; when false only for
+# Tibetan+English sources and texts over ~300 segments (quality vs. cost).
+always_two_drafts: false
+
+# Companion skills the `pandita` role may consult when it is unsure (directory names next to
+# this skill, e.g. [dharmamitra]). Empty = the pandita works from the Tibetan alone.
+pandita_tools: []
+
+# backend: agent   — Claude Code Agent tool (model: opus | sonnet | haiku)
+#          copilot — GitHub Copilot CLI (model: copilot model id; optional effort: passed as --effort)
+#          codex   — Codex via /sous-chef:fire (model comes from the Codex config)
+# fallback: {backend, model} applied by the main session when the primary backend
+#           fails (quota, timeout); the substitution is recorded in drafts/notes.md.
+roles:
+  translator:     {backend: agent, model: opus}
+  translator_2:   {backend: agent, model: sonnet}   # second full draft: Tibetan+English source, or >300 segments
+  pandita:        {backend: agent, model: opus}     # meaning consultant: answers the editor's questions on the Tibetan, never writes the target language
+  reviewer:       {backend: agent, model: opus}
+  terminologist:  {backend: agent, model: opus}     # audits drafts against the glossary, proposes new rows
+  backtranslator: {backend: agent, model: sonnet}
+  proofreader:    {backend: agent, model: opus}
+  phonetics:      {backend: agent, model: sonnet}
