@@ -35,7 +35,7 @@
 #
 # --- jména a klíčové postavy (provenience Pudri Rekpung / Vadžrakilája)
 སྤུ་གྲི་རེག་ཕུང	spu gri reg phung	Břitva, jež ničí dotekem	dotek	prov	nikoli „dotykem"; název cyklu
-རྡོ་རྗེ་གཞོན་ནུ	rdo rje gzhon nu	Vadžrakumára	Vadžrakumár	fixed
+རྡོ་རྗེ་གཞོན་ནུ	rdo rje gzhon nu	Vadžrakumára	Vadžrakumár	fixed	
 དཔལ་ཆེན	dpal chen	velký slavný	slavn	fixed	dle vzorů (0/9 shoda s dřívějším „Velkolepý")
 འཁོར་ལོ་རྒྱས་འདེབས་མ	'khor lo rgyas 'debs ma	Khorlo Gjedebma	Gjedebm	prov	choť; nepřekládat („Pečetitelka kola" zamítnuto); instrumentál „Gjedebmou"; mimo referenční korpus (0 dokladů — cyklus ve vzorech není)
 གཤིན་རྗེ	gshin rje	Jamarádža	Jamarádž	fixed	arbitráž 2/4: 2× Jamarádža, zbytek malé „jama" jako obecné jméno; „Šindže" jen ve fonetickém řádku, ne v češtině; v gshin rje gshed = Jamántaka
@@ -62,12 +62,12 @@
 དུར་ཁྲོད	dur khrod	pohřebiště	pohřebišt	fixed	učitel: charnel ground | Leichenplatz
 རིག་འཛིན	rig 'dzin	vidjadhára	vidjadhár	fixed	„vidjadhár*" 19× ve vzorech („vidjádhár*" 5×), „vidjádhar*" 0× — opraveno 2026-07-28; dřívější tvar glosáře byl bez opory a přepisoval správný tvar z banky tripletů | učitel: awareness holder | Gewahrseinshalter — Vidyādhara
 དངོས་གྲུབ	dngos grub	siddhi	siddhi	fixed	nepřekládat
-རིག་མ	rig ma	družka poznání	druž	fixed
+རིག་མ	rig ma	družka poznání	druž	fixed	
 སྔགས་ཕྲེང	sngags phreng	řetězec mantry	řetěz	fixed	dle vzorů (ne „girlanda mantry"); stem zkrácen na „řetěz" 2026-07-28 — „řetězec" není invariantní prefix (řetězce/řetězců mají vkladné -e-) a `check` hlásil drift na správných tvarech
 ངན་སྔགས	ngan sngags	zhoubná mantra	zhoubn	prov	ve vzorech málo dokladů (arbitráž 0/1); drag sngags = hněvivá mantra
 དམ་ཡེ	dam ye	bytost samají a moudrosti	samaj	fixed	dam tshig pa / ye shes pa; „samají" 39× ve vzorech vs „samaji" 1× — opraveno 2026-07-28 | učitel: samaya and jñāna aspects | Verbindungs- und Weisheitsaspekte
 འདོད་ཡོན	'dod yon	smyslová potěšení	potěš	fixed	učitel: sense pleasures | Sinnesfreuden
-ཐལ་འབྱིན	thal 'byin	probodávající proniknutí	proniknut	prov	thal 'byin rnam bzhi = čtvero probodnutí; technický termín, k ověření
+ཐལ་འབྱིན	thal 'byin	probodávající proniknutí	proniknut	prov	thal 'byin rnam bzhi = čtvero proniknutí; technický termín, k ověření; identita čtyř k ověření u učitele (pandita: low)
 #
 # --- fáze praxe a aktivity
 བསྙེན་པ	bsnyen pa	fáze přístupu	přístup	fixed	dle vzorů; ponechaná transkripce „ňenpa" v technickém kontextu
@@ -75,8 +75,8 @@
 ལས་སྦྱོར	las sbyor	praxe aktivity	aktivit	fixed	dle vzorů (ne „uplatnění aktivity") | učitel: activity application | Aktivitätsanwendung
 ཞི་བ	zhi ba	mírná	mírn	prov	čtyři aktivity: mírná / rozšiřující / mocenská / hněvivá
 རྒྱས་པ	rgyas pa	rozšiřující	rozšiř	prov	čtyři aktivity; vzory formulují volněji
-དྲག་པོ	drag po	hněvivá	hněviv	prov
-ཚར་གཅོད	tshar gcod	vyhlazení	vyhla	prov
+དྲག་པོ	drag po	hněvivá	hněviv	prov	
+ཚར་གཅོད	tshar gcod	vyhlazení	vyhla	prov	
 སྨད་ལས	smad las	nižší aktivity	nižší	fixed	učitel: lower activity | Niedere Aktivität — LOTR: Niedrig heißt hier eigentlich "nachfolgend" im Sinne von der Höheren Aktivität (Erleuchtung für einen selbst) nachfolgend
 #
 # --- bytosti a ochránci
@@ -105,8 +105,8 @@
 #
 # --- ponechané transkripce z rol tshig (pokyny rituální hudby; mimo ref. korpus)
 ཟིལ་འབེབས	zil 'bebs	zilbeb	zilbeb	prov	úder činelů
-ཐིང	thing	thing	thing	prov
-ཌཱརྐ	DAr ka	darka	darka	prov
+ཐིང	thing	thing	thing	prov	
+ཌཱརྐ	DAr ka	darka	darka	prov	
 ཡོ་སྤྱི	yo spyi	jo-či	jo-či	prov	nápěv
 #
 # --- open (not sent to prompts; decide first, then ask the user)
@@ -130,7 +130,7 @@
 ཤིས་པ་བརྗོད	shis pa brjod	verše příznivosti	příznivost	fixed	„verše příznivosti" 4×, „slova přízně" 0× — zamítnuto
 དམ་རྫས	dam rdzas	substance samají	samají	fixed	„substance samají" 8×, „substance samaji" 0× — genitiv plurálu
 འགྲུབ་པར་ཤོག	'grub par shog	dosáhneme realizace	realizac	fixed	tentýž verš (dkyil 'khor gcig tu 'grub par shog) je ve vzorech 2× jako „dosáhneme realizace"; „uskutečnění" pro grub zamítnuto
-རྒྱུད	rgyud	proud bytí	proud bytí	prov	0× ve vzorech („proud mysli" 1×, „kontinuum" pro jiné termy); Lotsawa House „your very being" — rgyud zde není jen mysl | učitel: stream of being | Seinsstrom
+རྒྱུད	rgyud	proud bytí	proud bytí	prov	0× ve vzorech („proud mysli" 1×, „kontinuum" pro jiné termy); Lotsawa House „your very being" — rgyud zde není jen mysl | učitel: stream of being | Seinsstrom | kontext: „proud bytí“ jen o rgyud jednotlivce; ve složeninách linie (rtsa brgyud, bka' gter rgyud, sgrub brgyud) = linie
 ཐུན་གྱིས	thun gyis	rituální substance	substanc	fixed	NE „thun" — v češtině ani angličtině to není zavedené slovo (rozhodnutí uživatele 2026-07-28); thun gyis brab = „vrženými rituálními substancemi", Lotsawa House „wrathful substances". Klíč je zúžený na instrumentál: samotné ཐུན matchuje i ཐུན་མོང (běžný) a ཐུན་མཐར (konec sezení) — homonymie substance / praxový úsek. Starší „thun-torma" v Pudri Rekpung se nepředělává (neaktuální překlad).
 ལྷུན་གྲུབ	lhun grub	spontánní dovršení	spontán	prov	„spontánně přítomný" 5×, „spontánně dovršen" 1×, „spontánní dokonalost" 1× — vzory kolísají, proto prov. U epitet v oslovení (sku gsum lhun grub …) volit jmennou apozici „spontánní dovršení tří kájí", ne visící přívlastek „spontánně dovršené tři káje" (nominativ bez vazby na vokativ). | učitel: spontaneous presence | spontane Gegenwart/Präsenz
 ཡོན་ཏན	yon tan	kvality	kvalit	fixed	„kvalit*" 42× ve vzorech („dokonalé kvality", „pozitivní kvality"), „vlastnost" 1× — zamítnuto; rozhodnutí uživatele 2026-07-28 | učitel: quality, qualities | Qualität, Qualitäten
@@ -138,7 +138,7 @@
 སྒོ་གསུམ	sgo gsum	tři brány	bran	fixed	„tří bran" 4× + „tři brány" 3× + „třemi branami" 1×; „vrata" 0× — zamítnuto (rozhodnutí uživatele 2026-07-28); vzory často glosují „(těla, řeči a mysli)"
 རྡོ་རྗེར་གྱུར	rdo rjer gyur	přemění se ve vadžru	vadžr	prov	„vadžrový" jako přísudek 0× ve vzorech (jediné „vadžrových paprsků"); vzory mají „vadžra tělo, vadžra řeč a vadžra mysl" 2× a „stav vadžry" 3×
 ཧེ་རུ་ཀ	he ru ka	héruka	hér	prov	„héruko" 11× vs „heruko" 2× ve vzorech; v nominativu remíza („héruka" 7× / „heruka" 8×), proto prov — rozhoduje vokativ, nejčastější tvar ve verších
-འོད་ཟེར་གླང་པོ	'od zer glang po	Özer Langpo	Özer Lang	prov	mistr kílajové linie (Pudri Rekpung seg 6); „Prabhahasti" 0× i „Langpo" 0× ve vzorech — bez dokladu na žádné straně vyhrává tibetská transkripce, sanskrt patří do poznámky
+འོད་ཟེར་གླང་པོ	'od zer glang po	Prabháhasti	Prabháhast	prov	mistr kílajové linie (Pudri Rekpung seg 6); „Prabhahasti" 0× i „Langpo" 0× ve vzorech — bez dokladu na žádné straně vyhrává tibetská transkripce, sanskrt patří do poznámky; pandita 2026-09-03: kalk skt. Prabhāhasti (high), do textu sanskrt, Özer Langpo jen jako tibetská forma
 མཁར་ཆེན་བཟའ	mkhar chen bza'	Kharčhenzo	Kharčhenz	prov	1× ve vzorech, vždy s poznámkou „Princezna z Kharčhenu – Ješe Tsogjäl"; „paní z Kharčhenu" 0× — zamítnuto (gloss patří do poznámky, ne do verše)
 མཐར་ཕྱིན	mthar phyin	završen	završ	prov	„završ*" 25× vs „k dokonalosti" 2×; mthar phyin = dovést k završení; sloveso, proto prov
 ཆགས་ཐོགས	chags thogs	lpění i překážky	lpě	prov	dvojice: chags = lpění (5×), thogs = překážky; překlad jen druhého členu („nic nebrání") vypouští nepřipoutanost
@@ -330,7 +330,7 @@
 དོ་ཤལ	do shal	středně dlouhý náhrdelník	náhrdelník	prov	učitel: middle lenght necklace | mittellange Halskette
 དོར་སྟབས	dor stabs	postoj v kroku	postoj	prov	učitel: striding stance | Schreitstellung; alt: kročný postoj
 དཔའ་བོ	dpa' bo	hrdina	hrdin	prov	učitel: vīra, hero | Held — Vira; alt: vira
-དཔལ	dpal	sláva	sláv	prov	učitel: splendor, glory | Pracht, Glorie; alt: nádhera
+དཔལ	dpal	sláva	sláv	prov	učitel: splendor, glory | Pracht, Glorie; alt: nádhera | kontext: substantivum „sláva“ jen samostatně; jako epiteton před jménem adjektivně „slavný“ (dle dpal chen)
 དཔལ་དང་ལྡན་པའི་ཞིང	dpal dang ldan pa'i zhing	říše naplněná slávou	říš	prov	učitel: Śrīmat, realm filled with glory | Land erfüllt mit Herrlichkeit — Śrīmat; alt: Šrímat
 དཔེའི་ཡེ་ཤེས	dpe'i ye shes	moudrost příkladu	moudrost	prov	učitel: example wisdom | Beispielsweisheit
 དྲན་པ	dran pa	pamatovat si	pamat	prov	učitel: smṛti, to remember, to be mindful | erinnern, vergegenwärtigen, gegenwärtig halten; alt: všímavost, mít na mysli
@@ -366,7 +366,7 @@
 གནས་ལུགས	gnas lugs	přirozený stav	stav	prov	učitel: abiding nature, natural state | Grundzustand; alt: základní stav
 གནོད་བྱེད	gnod byed	škodící	škod	prov	učitel: injuring | übeltuend, verletzend; alt: škůdce
 གཉུག་མ	gnyug ma	prvotní	prvotn	prov	učitel: original, primordial | ursprünglich; alt: původní
-གོ་འཕང	go 'phang	úroveň	úrov	prov	učitel: level | Stufe; alt: stupeň
+གོ་འཕང	go 'phang	stav	stav	prov	učitel: level | Stufe; alt: stupeň; alt: úroveň (učitelovo level/Stufe); rozhodnuto 2026-09-03
 གོད་ཁ	god kha	neštěstí	neštěstí	prov	učitel: misfortune, accident | Unglück; alt: nehoda
 གོལ་ས	gol sa	scestí	scest	prov	učitel: sidetrack | Irrweg; alt: odbočení
 གོམས་པ	goms pa	obeznámit se	obeznám	prov	učitel: to habituate to, to familiarize with, to accustom to | vertrautwerden; alt: zvyknout si
@@ -540,7 +540,7 @@
 རྒྱུད་ལུང་མན་ངག	rgyud lung man ngag	tantry, písma a přímé pokyny	tantr	prov	učitel: tantras, scriptures and pith instructions | Tantras, Schriften und direkte Anweisungen
 རི་ཆོས	ri chos	horská dharma	dharm	prov	učitel: mountain dharma | Bergdharma
 རི་རབ	ri rab	hora Méru	mér	prov	učitel: Mt. Meru | Weltenberg; Meru; alt: Světová hora
-རིག་པ	rig pa	rigpa	rigp	prov	učitel: rigpa, awareness | Gewahrsein; alt: uvědomění
+རིག་པ	rig pa	rigpa	rigp	prov	učitel: rigpa, awareness | Gewahrsein; alt: uvědomění | kontext: „rigpa“ jen tam, kde je rig pa samostatný technický termín; ve výčtech a triádách (སྣང་གྲགས་རིག་པ) jde o obyčejné vědomí — tam „vědomí“
 རིག་པ་དབྱིངས་ཀྱི་སྒྲོན་མ	rig pa dbyings kyi sgron ma	lampa základního prostoru rigpy	lamp	prov	učitel: lamp of the basic space of awareness | Lampe des Gewahrseinsgrundraums
 རིག་པ་འཛིན་པ	rig pa 'dzin pa	vidjadhára	vidjadhár	prov	učitel: awareness holder | Gewahrseinshalter; alt: dle glosáře
 རིག་པ་ཚད་ཕེབས	rig pa tshad phebs	rigpa dosahující plné míry	rigp	prov	učitel: awareness reaching fullness | das Erreichen des vollen Maßes des Gewahrseins — Thögäl
@@ -686,7 +686,7 @@
 ཡོ་ལངས	yo langs	trvání	trván	prov	učitel: continuity | Fortdauern; alt: pokračování
 ཡོན་མཆོད	yon mchod	dárce a příjemce	dárc	prov	učitel: patron and recipient | Förderer und Empfänger; alt: podporovatel a příjemce
 ཡོན་མཆོད་འཁོར་དང་བཅས་པ	yon mchod 'khor dang bcas pa	spolu s dárci, příjemci a jejich družinou	dárc	prov	učitel: together with patrons, recipients and retinue | zusammen mit den Gönnern, Empfängern und dem Umfeld
-ཡོངས་གྲུབ	yongs grub	plně uskutečněná [přirozenost]	uskuteč	prov	učitel: pariniṣpanna, fully established [nature] | völlig verwirklichte [Natur], völlig existente [Natur]; alt: plně ustavená [přirozenost]
+ཡོངས་གྲུབ	yongs grub	plně uskutečněná [přirozenost]	uskuteč	prov	učitel: pariniṣpanna, fully established [nature] | völlig verwirklichte [Natur], völlig existente [Natur]; alt: plně ustavená [přirozenost] | kontext: jen jako pariniṣpanna ve výčtu tří přirozeností; mimo tento kontext (ཕྲིན་ལས་ཡོངས་གྲུབ ap.) běžné „plně dovršený“
 ཡོངས་གྱུར	yongs gyur	úplná přeměna	přemě	prov	učitel: complete transformation | vollständige Verwandlung
 ཟ་གསོད	za gsod	pohlcovači a vražednice	pohlcovač	prov	učitel: devourer and killer | Verschlinger und Mörderinnen
 ཟབ་གསང་མཁའ་འགྲོ་སྙིང་ཐིག་ལས	zab gsang mkha' 'gro snying thig las	Z hluboké tajné srdečné esence dákiní:	esenc	prov	učitel: From the Profound Secret Heart Essence of the Ḍākinīs: | Aus der tiefgründigen, geheimen Herzessenz der Ḍākinīs:
@@ -722,3 +722,29 @@
 གང་ཆེན་མཙོ	gang chen mtso	Nesmírný oceán	oceán	prov	učitel: Immense Ocean | Riesiger Ozean  — Eigenname für eine Klassifikation des Sambhogakayas
 པདམ་འབྱུང་གནས	padma 'byung gnas	Padmasambhava	padmasambhav	prov	učitel: Lotus born, Padmasambhava  | Lotusgeborener, Padmasambhava ; alt: Lotosem zrozený
 གཏོར་མ	gtor ma	torma	torm	prov	učitel: torma | Torma — ich verende das tibetische Wort unübersetzt; dle glosáře; nepřekládat
+
+# --- 2026-09-03 terminologist proposals accepted by the editor (Lineage Supplication, Pudri Rekpung)
+སངས་རྒྱས	sangs rgyas	buddha	buddh	prov	obecný termín, v glosáři dosud chybí; v seg 1 v ustrnulém spojení དང་པོའི་སངས་རྒྱས; malé „b“ mimo vlastní jméno | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+དང་པོའི་སངས་རྒྱས	dang po'i sangs rgyas	prvotní buddha	prvotní buddh	prov	seg 1, epiteton Samantabhadry; „prvotní“ zde patří k buddhovi, nikoli k moudrosti (ye shes je „moudrost“ bez „prvotní“); dang po = první, prvotní | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+ཀུན་ཏུ་བཟང	kun tu bzang	Samantabhadra	Samantabhadr	prov	seg 1, dharmakájový buddha; sanskrt, ne „Küntuzangpo“ — týž princip jako u rdo rje 'chang = Vadžradhara; nezaměňovat s ཀུན་ཏུ་འོད (13. bhúmi) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+སྒྱུ་འཕྲུལ	sgyu 'phrul	magický projev	projev	prov	seg 2, v ཟུང་འཇུག་སྒྱུ་འཕྲུལ་ཡེ་ཤེས; máyā-jāla; „iluz“ jako stem, protože „magick*“ sedí i na 'phrul 'khor (klamné mechanismy) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+རྡོ་རྗེ་སེམས	rdo rje sems	Vadžrasattva	Vadžrasattv	prov	seg 2, zkrácený zápis rdo rje sems pa; sanskrt jako u rdo rje 'chang = Vadžradhara, ne „Dordže Sempa“ | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+བཛྲ་ཀུ་མཱ་ར	badz+ra ku mA ra	Vadžrakumára	Vadžrakumár	prov	seg 3, sanskrtský zápis téhož, co རྡོ་རྗེ་གཞོན་ནུ (fixed); varianta zápisu, stejně jako pár o rgyan / u rgyan | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+འབར་བ	'bar ba	planoucí	planouc	prov	seg 3, འབར་བའི་སྐུ = planoucí kája; participiální epiteton, proto prov | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+གསོལ་བ་འདེབས	gsol ba 'debs	modlím se k vám	modl	prov	seg 4/8/12, refrén; sloveso, proto prov — osoba a číslo se řídí kontextem (v tomto textu 1. os. sg.) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+གསང་བའི་མཛོད	gsang ba'i mdzod	tajná pokladnice	pokladnic	prov	seg 5, v gsang ba'i mdzod 'dzin = držitel tajné pokladnice; mdzod = pokladnice jako v chos nyid nam mkha'i klong mdzod | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+བདེ་བའི་འཁོར་ལོ	bde ba'i 'khor lo	kolo blaženosti	blaženost	prov	seg 5, jméno mistra kílajové linie (Sukhačakra); 'khor lo se zde nepřekládá jako „čakra“, jde o jméno; stem v genitivu, protože „Kolo“ se skloňuje | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+རྡོ་རྗེ་ཐོད་ཕྲེང་རྩལ	rdo rje thod phreng rtsal	Dordže Thöthrengtsäl	Dordže Thöthreng	prov	seg 7; tvar „Thöthrengtsäl“ podle pad+ma thod phreng (prov); stem s „Dordže“, aby nekolidoval s Pema Thöthrengtsäl | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+ཞབས	zhabs	ctihodný	ctihodn	prov	seg 6, honorifikum za jménem (doslova „chodidla“); v češtině se řeší přívlastkem, ne substantivem; srov. rje btsun = ctihodný mistr | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+བཀའ་བབས	bka' babs	svěřený přenos	přenos	prov	seg 9, bka' babs = přenos svěřený učitelem žákovi; ve verši se rozpouští do vazby („jíž byl svěřen přenos“), proto prov; srov. bcol ba = svěřit | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+ཟབ་གསང	zab gsang	hluboké tajemství	tajemství	prov	seg 10; v ཟབ་གསང་མཁའ་འགྲོ་སྙིང་ཐིག་ལས (prov) přívlastkově „hluboká tajná“, zde jako jmenná fráze („pečeť hlubokého tajemství“) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+རྒྱ་འགྲོལ	rgya 'grol	rozlomit pečeť	pečet	prov	seg 10; rgya = pečeť (srov. rgya rgya rgya = Pečeť. Pečeť. Pečeť.), 'grol = rozvázat; o tertönovi, který rozlomí pečeť termy; sloveso, proto prov | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+གཏེར་འབྱིན	gter 'byin	vynášet termy	term	prov	seg 10; gter = terma, 'byin = vynést na světlo; „skryté termy“ už jsou v bka' gter rgyud; sloveso, proto prov | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+ཆོས་བདག	chos bdag	držitel dharmy	držitel	prov	seg 11; vlastník/dědic učení, kterému je cyklus svěřen; ne „pán dharmy“ (bdag zde = držitel, jako v rig 'dzin) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+རྩ་བརྒྱུད་བླ་མ	rtsa brgyud bla ma	kořenoví mistři a mistři linie	kořen	prov	seg 11; brgyud zde = linie (nikoli „proud bytí“ jako u samotného rgyud); bla ma = mistr (fixed) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+སྣང་གྲགས་རིག་པ	snang grags rig pa	jevy, zvuky a vědomí	zvuk	prov	seg 13, triáda odpovídající třem mandalám (tělo/řeč/mysl); rig pa je zde třetí člen triády = obyčejné uvědomění, ne dzogčhenová rigpa — viz (b) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+དཀྱིལ་འཁོར	dkyil 'khor	mandala	mandal	prov	seg 13; samostatný termín v glosáři chybí, existuje jen lus dkyil = mandala těla | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+གྲུབ་མཐའ	grub mtha'	konečná nauka	nauk	prov	seg 14; doslova „hranice uskutečněného“ = filozofický závěr, k němuž praxe dospěje; „škola/systém“ se v tomto verši nehodí | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+ཚད་འཁྱོལ	tshad 'khyol	dosáhnout plné míry	plné míry	prov	seg 14; synonymní s ཚད་ཕེབས (rig pa tshad phebs = rigpa dosahující plné míry); sloveso, proto prov | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+རྩོལ་མེད	rtsol med	bez úsilí	úsilí	prov	seg 15; ne „spontánní“ — to je vyhrazeno pro lhun grub (spontánní dovršení) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
+བདུད་ལས་རྣམ་རྒྱལ	bdud las rnam rgyal	úplné vítězství nad démony	vítězství	prov	seg 16; Máravidžaja; rnam rgyal = úplné vítězství, nezaměňovat s རྣམ་པར་རྒྱལ་མ (Vidžajá, božstvo); bdud = démoni (prov) | terminolog 2026-09-03 (Prosba k linii Pudri Rekpung)
